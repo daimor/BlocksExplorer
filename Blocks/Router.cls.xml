@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Blocks.Router">
+<IncludeCode>%syDatabase</IncludeCode>
+<Super>%CSP.REST</Super>
+<TimeCreated>63776,33612.994296</TimeCreated>
+
+<XData name="UrlMap">
+<Data><![CDATA[
+<Routes>
+<Route Url="/rest/dblist" Method="GET" Call="DBList"/>
+<Route Url="/rest/block/:block" Method="GET" Call="BlockInfo"/>
+<Route Url="/rest/block/:block" Method="POST" Call="BlockInfo"/>
+<Route Url="/((?!rest/).*)" Method="GET" Call="GetStatic"/>
+</Routes>
+]]></Data>
+</XData>
+
+<Method name="GetStatic">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pName:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    #dim %response As %CSP.Response
+    
+    set tName = pName
+    if tName = "" set tName = "index.html"
+    set tName = $tr(tName,".","_")
+    set ext = $zcvt($p(tName,"_",*),"l")
+    if ##class(%CSP.StreamServer).FileClassify(ext,.type) {
+        set %response.ContentType = type
+    }
+    set xdata = ##class(%Dictionary.XDataDefinition).%OpenId(..%ClassName(1)_"||"_tName)
+    if $isobject(xdata) {
+        quit xdata.Data.OutputToDevice()
+    }
+    
+    set tName = %request.GetCgiEnv("SCRIPT_FILENAME")
+    if pName = "" set tName = ##class(%File).NormalizeFilename("index.html", tName)
+    if ##class(%File).Exists(tName) {
+        set stream = ##class(%Stream.FileBinary).%New()
+        set stream.Filename = tName
+        quit stream.OutputToDevice()
+    }
+    quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="DBList">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pBlock</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    new $namespace
+    znspace "%SYS"
+    #dim dblist As %Array = []
+    
+    set tStatement=##class(%SQL.Statement).%New()
+    set tSC=tStatement.%PrepareClassQuery("Config.Databases","List")
+    #dim rset As %SQL.StatementResult = tStatement.%Execute()
+    while rset.%Next() {
+        set dir=rset.%Get("Directory")
+        set name=rset.%Get("Name")
+        set was($zconvert(dir,"L"))=name
+        do add(name,dir)
+    }
+    
+    set tSC=tStatement.%PrepareClassQuery("SYS.Database","List")
+    set rset = tStatement.%Execute()
+    while rset.%Next() {
+        set dir=rset.%Get("Directory")
+        continue:$data(was($zconvert(dir,"L")))
+        do add(dir,dir)
+    }
+    write dblist.$toJSONFormat()
+    quit $$$OK
+add(name,dir)
+    set db=##class(SYS.Database).%OpenId(dir)
+    set blocks=db.Size*1024*1024/db.BlockSize
+    do dblist.$push({
+        "name"      : name,
+        "directory" : dir,
+        "blocks"    : blocks
+    })
+]]></Implementation>
+</Method>
+
+<Method name="BlockInfo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pBlock</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<Implementation><![CDATA[
+    new $namespace
+    znspace "%SYS"
+    
+    set Directory=$select($isobject($get(%request)):%request.Get("directory"),1:"")
+    set:Directory="" Directory=$zutil(12,"samples")
+        
+
+    Set tJSON = ##class(%ZEN.proxyObject).%New()
+    set tJSON.blockId = pBlock
+    Set tJSON.nodes = ##class(%ListOfDataTypes).%New()
+
+    #dim error As %Exception.AbstractException = ""
+    try {
+        set rc=$$FindPointerBlock^DMREPAIR(Directory,pBlock,.upblock)
+
+        set rc=$$ParseRepairBlock^DMREPAIR(Directory,pBlock,,.OFF,.REPAIR,.REPPRINT,.REPVAL,.REPCCC,.REPLEN,.REPPAD,.REPSUB,.REPBIG,.REPINFO,.N,.TYPE,.LINK,.BIGCOUNT,.PNTLEN,.NEXTPNTLEN,.NEXTPNTVAL,.NEXTPNTOFF,.PNTREF,.NEXTPNTREF,.BLINCVER,.COLLATE,.GARTREE)
+    
+        set:$data(OFF) tJSON.offset=OFF
+        if $data(TYPE) {
+            set tJSON.type=TYPE
+            set tJSON.typename=$$GetTypeName^DMREPAIR(TYPE)
+        }
+        set:$data(LINK) tJSON.link=LINK
+        set:$data(BIGCOUNT) tJSON.bigCount=BIGCOUNT
+
+        set:$data(PNTLEN) tJSON.pointerLength=PNTLEN
+        set:$data(PNTREF("internal"),val) tJSON.pointerRefInt=$system.Encryption.Base64Encode(val)
+        set:$data(PNTREF("printable"),val) tJSON.pointerRef=val
+
+        set:$data(NEXTPNTLEN) tJSON.nextPointerLength=NEXTPNTLEN
+        set:$data(NEXTPNTOFF) tJSON.nextPointerOffset=NEXTPNTOFF
+        set:$data(NEXTPNTREF("internal"),val) tJSON.nextPointerRefInt=$system.Encryption.Base64Encode(val)
+        set:$data(NEXTPNTREF("printable"),val) tJSON.nextPointerRef=val
+        
+        set:$data(COLLATE) tJSON.collate=COLLATE
+        
+        for i=1:1:N {
+            
+            set tNode=##class(%ArrayOfDataTypes).%New()
+            do tNode.SetAt(i,"nodeId")
+
+            do:$data(REPAIR(i),repint) tNode.SetAt($system.Encryption.Base64Encode(repint),"internal")
+            for var="print","ccc","len","pad","sub","big","info" {
+                set val=@("REP"_$zconvert(var,"U"))@(i)
+                do tNode.SetAt(val,var)
+            }
+            if TYPE'=8,$data(REPVAL) {
+                set val=$listfromstring(@("REPVAL")@(i))
+                if TYPE=9 {
+                    do tNode.SetAt($listget(val,1),"blockId")
+                    do tNode.SetAt($listget(val,3),"collate")
+                } else {
+                    do tNode.SetAt($listget(val,2),"blockId")
+                }
+            }
+            
+            do tJSON.nodes.Insert(tNode)
+        }
+    } catch error {
+    }
+    CLOSE 63
+    
+    if $isobject(error) {
+        quit error.AsStatus()
+    }
+    
+    quit tJSON.%ToJSON()
+]]></Implementation>
+</Method>
+</Class>
+</Export>

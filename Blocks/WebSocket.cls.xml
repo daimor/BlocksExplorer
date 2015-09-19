@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Blocks.WebSocket">
+<Super>%CSP.WebSocket</Super>
+<TimeCreated>63812,72249.000955</TimeCreated>
+
+<Method name="OnPreServer">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="Server">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    Set $ZT="Error"
+    Set timeout=.5
+    set backJob=""
+    set dataGN=""
+    For  {
+        Set len=32656
+        Set data=..Read(.len, .status, timeout)
+        If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketClosed Quit
+        If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketTimeout {
+            if dataGN'="",$d(@dataGN)>1 {
+                set result=[]
+                set i=""
+                kill blocks
+                for {
+                    set i=$o(@dataGN@(i),1,blockInfo)
+                    quit:i=""
+                    set $lb(block,global)=blockInfo
+                    if global="" set global="_"
+                    set blocks(global,block)=""
+                    kill @dataGN@(i)
+                }
+                set global=""
+                for {
+                    set global=$o(blocks(global))
+                    quit:global=""
+                    set glob={"global":global}
+                    set glob.blocks=[]
+                    set block=""
+                    for {
+                        set block=$o(blocks(global,block))
+                        quit:block=""
+                        do glob.blocks.$push(block)
+                    }
+                    do result.$push(glob)
+                }
+                set status=..Write(result.$toJSON())
+            }
+        } elseif data="exit" {
+            Quit
+        } elseif $p(data,$c(1))="getblocks" {
+            set directory=$p(data,$c(1),2)
+            job ..GetBlocksMap(directory)
+            set backJob=$zchild
+            set dataGN=$na(^CacheTemp.BlocksMap(backJob))
+        } elseif data="ping" {
+            Set status=..Write("pong")
+        } else {
+            Set data="'"_data_"'"_" (length="_len_") recieved on "_$ZDate(+$Horolog,2)_" at "_$ZTime($Piece($Horolog,",",2),3)_" NameSpace="_$NameSpace
+            Set status=..Write(data)
+        }
+    }
+    Set status=..EndServer()
+    Quit $$$OK
+Error // Error
+    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OnPostServer">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetBlocksMap">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>aDirectory:%String=""</FormalSpec>
+<Implementation><![CDATA[
+    quit:aDirectory="" 0
+    new $namespace
+    zn "%sys"
+    
+    OPEN 63:"^^"_aDirectory
+    set tSC=..BlocksMap(3,,,.count)
+        
+    CLOSE 63
+    quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="BlocksMap">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>aBlockId:%Integer=3,aGlobal:%String="",aHasLong=0,aCount</FormalSpec>
+<Implementation><![CDATA[
+    new $namespace
+    znspace "%SYS"
+    quit:aBlockId=0 0
+    if $i(aCount),aGlobal'="",$i(aCount(aGlobal)) do add(aBlockId,aGlobal)
+    
+    
+    #dim error As %Exception.AbstractException = ""
+    try {
+        View aBlockId
+        set blockType=$view($Zutil(40,32,1),0,1)
+        set nodes=0
+        if blockType=8 {
+            if aHasLong {
+                For N=1:1 {
+                    Set X=$VIEW(N*2,-6)
+                    Quit:X=""
+                    s gdview=$a(X)
+                    if $lf($lb(5,7,3),gdview) {
+                        set cnt=$p(X,",",2)
+                        if $i(aCount,cnt),$i(aCount(aGlobal),cnt)
+                        set blocks=$p(X,",",4,*)
+                        for i=1:1:cnt {
+                            set nextBlock=$p(X,",",3+i)
+                            do add(nextBlock,aGlobal)
+                        }
+                    }
+                }
+            }
+        } else {
+            For N=1:1 {
+                Set X=$VIEW(N-1*2+1,-6)
+                Quit:X=""
+                Set nextBlock=$VIEW(N*2,-5)
+                if blockType=9 set aGlobal=X
+                ;continue:aGlobal'="DeepSee.Index"
+                s haslong=0
+                i $p($v(N*2,-6),",",1) {
+                    s haslong=1
+                }
+                set nodes($i(nodes))=$lb(nextBlock,aGlobal,haslong)
+            }
+        }
+        
+        f i=1:1:nodes {
+            do ..BlocksMap($lg(nodes(i)),$lg(nodes(i),2),$lg(nodes(i),3),.aCount)
+        }
+    } catch error {
+    }    
+        
+    quit $$$OK
+add(blockId,global)
+    set ind=$o(^CacheTemp.BlocksMap($job,""),-1)+1
+    set ^CacheTemp.BlocksMap($job,ind)=$lb(blockId,global)
+]]></Implementation>
+</Method>
+</Class>
+</Export>

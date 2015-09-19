@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Project name="BlocksExplorer" LastModified="2015-09-20 01:48:56.736019">
+  <Items>
+    <ProjectItem name="Blocks.BlocksInstaller" type="CLS"></ProjectItem>
+    <ProjectItem name="Blocks.Router" type="CLS"></ProjectItem>
+    <ProjectItem name="Blocks.WebSocket" type="CLS"></ProjectItem>
+  </Items>
+</Project>
+</Export>

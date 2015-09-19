@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Blocks.BlocksInstaller">
+<Super>%Projection.AbstractProjection</Super>
+<TimeCreated>63772,62509.695398</TimeCreated>
+
+<Projection name="Reference">
+<Type>BlocksInstaller</Type>
+</Projection>
+
+<Parameter name="CSPAPP">
+<Type>%String</Type>
+<Default>/blocks</Default>
+</Parameter>
+
+<Parameter name="CSPAPPDESCRIPTION">
+<Type>%String</Type>
+<Default>A WEB application for Cache Blocks Explorer.</Default>
+</Parameter>
+
+<Parameter name="ROUTER">
+<Type>%String</Type>
+<Default>Blocks.Router</Default>
+</Parameter>
+
+<Method name="CreateProjection">
+<Description>
+This method is invoked when a class is compiled.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[cls:%String,&params]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    set ns=$namespace
+    new $namespace
+    znspace "%SYS"
+    
+    if ('##class(Security.Applications).Exists(..#CSPAPP)) {
+        do ##class(Security.System).GetInstallationSecuritySetting(.security)
+        set cspProperties("AutheEnabled") = $select((security="None"):64,1:32)
+        set cspProperties("NameSpace") = ns
+        set cspProperties("Description") = ..#CSPAPPDESCRIPTION
+        set cspProperties("DispatchClass") = ..#ROUTER
+        write !, "Creating WEB application """_..#CSPAPP_"""..."
+        $$$ThrowOnError(##class(Security.Applications).Create(..#CSPAPP, .cspProperties))
+        write !, "WEB application """_..#CSPAPP_""" created."
+    } else {
+        write !, "WEB application """_..#CSPAPP_""" already exists, so it is ready to use."
+    }
+    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="RemoveProjection">
+<Description>
+This method is invoked when a class is 'uncompiled'.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[cls:%String,&params,recompile:%Boolean]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    new $namespace
+    znspace "%SYS"
+
+    if (##class(Security.Applications).Exists(..#CSPAPP)) {
+        w !, "Deleting WEB application """_..#CSPAPP_"""..."
+        do ##class(Security.Applications).Delete(..#CSPAPP)
+        w !, "WEB application """_..#CSPAPP_""" was successfully removed."
+    }
+    QUIT $$$OK
+]]></Implementation>
+</Method>
+</Class>
+</Export>
