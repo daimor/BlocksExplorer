@@ -180,18 +180,22 @@ svg text.blocks-nodes-text tspan:hover {
 .mapWrapper .mapLegend {
   width: 250px;
   border-right: 2px solid beige;
+  overflow: auto;
 }
 
 .mapWrapper #map {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.mapWrapper #map canvas {
   width: 100%;
 }
 
 .mapLegend div {
   font-size: 12px;
   padding-left: 20px;
-  text-overflow: ellipsis;
   width: 100%;
-  overflow: auto;
   position: relative;
 }
 

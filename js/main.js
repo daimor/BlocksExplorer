@@ -16,7 +16,7 @@ var App = function () {
     zoomToFitBtn: $('#btnZoomToFit').get(0),
     downloadSVGBtn: $('#btnDownloadSVG').get(0),
     downloadPNGBtn: $('#btnDownloadPNG').get(0),
-    mapViewer: $('#map').get(0)
+    mapViewer: $('#map canvas').get(0)
   }
 
   this.blocksViewer = new BlocksViewer(this, this.elements.blocksViewer)
@@ -77,13 +77,44 @@ App.prototype.setDatabase = function (directory, blocks) {
     this.blocksViewer.reset()
     this.blocksViewer.get(3)
   }
+  this.saveState()
 }
 
 App.prototype.reset = function () {
   this.blocksViewer.reset()
   this.mapViewer.reset()
   this.databaseSelect.find('option:first').attr('selected', true)
+  this.database = null
+  this.saveState()
 }
+
+App.prototype.saveState = function () {
+  var obj = {
+    type: this.viewType.is(':checked') ? 'map' : 'tree',
+    database: this.database
+  }
+
+  sessionStorage.setItem('currentState', JSON.stringify(obj))
+}
+
+App.prototype.restoreState = function () {
+  var state = (sessionStorage.getItem('currentState') || '')
+  var obj
+
+  try {
+    obj = JSON.parse(state)
+  } catch (e) {
+    obj = {}
+  }
+
+  this.viewType.attr('checked', (obj.type === 'map')).trigger('change')
+  if (obj.database) {
+    this.databaseSelect.val(obj.database).trigger('change')
+  }
+
+  return obj
+}
+
 
 App.prototype.init = function () {
   var self = this
@@ -106,5 +137,6 @@ App.prototype.init = function () {
 
   this.load('rest/dblist', null, function (data) {
     self.updateDatabases(data)
+    self.restoreState()
   })
 }
