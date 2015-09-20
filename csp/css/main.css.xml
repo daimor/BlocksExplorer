@@ -1,0 +1,315 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<CSP name="css/main.css" application="/csp/blocks/"><![CDATA[
+html,
+body {
+  margin: 0px;
+  padding: 0px;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#header {
+  padding: 10px;
+  overflow: hidden;
+  box-sizing: border-box;
+  height: 45px;
+}
+
+#header .item {
+  display: inline-block;
+  float: left;
+  padding-right: 15px;
+  height: 20px;
+}
+
+#blocksViewer {
+  height: 100%;
+  background-color: gray;
+  position: relative;
+  cursor: -webkit-grab;
+  cursor: -moz-grab;
+}
+
+#blocksViewer .paper-scroller {
+  width: 100%;
+  height: 100%;
+  overflow: scroll;
+  position: relative;
+}
+
+#blocksViewer svg {
+  background-color: #eee;
+}
+
+svg text {
+  font-family: monospace;
+}
+
+svg rect.blocks-nodes-rect {
+  pointer-events: none;
+}
+
+svg text.blocks-nodes-text {
+  pointer-events: all;
+}
+
+svg text.blocks-nodes-text tspan {
+  cursor: pointer;
+}
+
+svg text.blocks-nodes-text tspan:hover {
+  fill: red;
+  text-decoration: underline;
+}
+
+.blocksTreeToolBar {
+  position: absolute;
+  padding: 5px;
+  top: 0;
+  left: 0;
+}
+
+#navigator {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+}
+
+#navigator .navigator {
+  overflow: visible;
+}
+
+#viewType {
+  display: none;
+}
+
+#viewType:checked ~.blocksTreeWrapper {
+  display: none;
+}
+
+#viewType:not(:checked) ~.mapWrapper {
+  display: none;
+}
+
+.toggle {
+  position: relative;
+  width: 110px;
+  height: 40px;
+  display: inline-block;
+  margin-left: 20px;
+}
+
+.toggle span {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #a5a39d;
+  border-radius: 40px;
+  box-shadow: inset 0 3px 8px 1px rgba(0, 0, 0, 0.2), 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+.toggle span::before {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -18px;
+  right: -18px;
+  bottom: -18px;
+  left: -18px;
+  border-radius: inherit;
+}
+
+.toggle span label {
+  cursor: pointer;
+  display: block;
+  height: 100%;
+  width: 60%;
+  border-radius: inherit;
+  position: absolute;
+  z-index: 2;
+  right: 40%;
+  top: 0;
+  background: #333;
+}
+
+.toggle span label::before {
+  width: 30px;
+  content: "tree";
+  text-transform: uppercase;
+  font-style: normal;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.4);
+  text-shadow: 0 1px 0 #bcb8ae, 0 -1px 0 #97958e;
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 10px;
+  position: absolute;
+  top: 50%;
+  margin-top: -5px;
+  right: -60%;
+}
+
+#viewType:checked ~ #header .toggle span label {
+  right: -1%;
+}
+
+#viewType:checked ~ #header .toggle span label::before {
+  content: "map";
+  right: 100%;
+}
+
+.mapWrapper,
+.blocksTreeWrapper {
+  height: 100%;
+  box-sizing: border-box;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-top: 50px solid transparent;
+}
+
+.mapWrapper > div {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.mapWrapper .mapLegend {
+  width: 250px;
+  border-right: 2px solid beige;
+  overflow: auto;
+}
+
+.mapWrapper #map {
+  width: 100%;
+  overflow-y: auto;
+}
+
+.mapWrapper #map canvas {
+  width: 100%;
+}
+
+.mapLegend div {
+  font-size: 12px;
+  padding-left: 20px;
+  width: 100%;
+  position: relative;
+}
+
+.mapLegend span {
+  width: 10px;
+  height: 10px;
+  display: block;
+  float: left;
+  margin-right: 5px;
+  position: absolute;
+  top: 0;
+  left: 5px;
+}
+
+.icon {
+  display: inline-block;
+  background-color: #333;
+  border-radius: 12px;
+  width: 24px;
+  height: 24px;
+  position: relative;
+  cursor: pointer;
+  margin-right: 10px;
+  -webkit-transition: all .2s ease;
+  -moz-transition: all .2s ease;
+  -o-transition: all .2s ease;
+  transition: all .2s ease;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.icon.button {
+  color: white;
+  font-size: 10px;
+  width: 40px;
+  padding: 5px 0px;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  overflow: auto;
+  text-align: center;
+}
+
+.icon.plus:before {
+  content: "";
+  background-color: #fff;
+  width: 4px;
+  height: 14px;
+  border-radius: 1px;
+  position: absolute;
+  top: 5px;
+  left: 10px;
+}
+
+.icon.plus:after,
+.icon.minus:after {
+  content: "";
+  background-color: #fff;
+  width: 14px;
+  height: 4px;
+  border-radius: 1px;
+  position: absolute;
+  top: 10px;
+  left: 5px;
+}
+
+.icon.select {
+  min-width: 200px;
+  width: auto;
+  color: white;
+  border: 0;
+  vertical-align: top;
+  padding-left: 3px;
+}
+
+.icon.scaleNormal:after {
+  content: "1:1";
+  position: absolute;
+  color: #fff;
+  text-align: center;
+  font-weight: 900;
+  font-family: monospace;
+  font-size: 10px;
+  width: 100%;
+  top: 6px;
+  left: 0;
+}
+
+.icon.download:before {
+  content: "";
+  border: 8px solid transparent;
+  border-right-width: 0;
+  border-left-color: #fff;
+  left: 8px;
+  right: auto;
+  position: absolute;
+  top: 16px;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+.icon.download:after {
+  content: "";
+  background-color: #fff;
+  width: 6px;
+  height: 10px;
+  border-radius: 1px;
+  position: absolute;
+  top: 5px;
+  left: 9px;
+}
+]]></CSP>
+</Export>

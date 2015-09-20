@@ -1,10 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-<Project name="BlocksExplorer" LastModified="2015-09-20 01:48:56.736019">
+<Project name="BlocksExplorer" LastModified="2015-09-20 17:14:55.040791">
   <Items>
     <ProjectItem name="Blocks.BlocksInstaller" type="CLS"></ProjectItem>
     <ProjectItem name="Blocks.Router" type="CLS"></ProjectItem>
     <ProjectItem name="Blocks.WebSocket" type="CLS"></ProjectItem>
+    <ProjectItem name="csp/blocks/index.html" type="CSP"></ProjectItem>
+    <ProjectItem name="csp/blocks/css/main.css" type="CSP"></ProjectItem>
+    <ProjectItem name="csp/blocks/css/joint.all.min.css" type="CSP"></ProjectItem>
+    <ProjectItem name="csp/blocks/js/mapViewer.js" type="CSP"></ProjectItem>
+    <ProjectItem name="csp/blocks/js/main.js" type="CSP"></ProjectItem>
+    <ProjectItem name="csp/blocks/js/joint.shapes.blocks.js" type="CSP"></ProjectItem>
+    <ProjectItem name="csp/blocks/js/joint.all.min.js" type="CSP"></ProjectItem>
+    <ProjectItem name="csp/blocks/js/blocksViewer.js" type="CSP"></ProjectItem>
   </Items>
 </Project>
 </Export>

@@ -1,3 +1,11 @@
+/csp/blocks/css/joint.all.min.css
+/csp/blocks/css/main.css
+/csp/blocks/index.html
+/csp/blocks/js/blocksViewer.js
+/csp/blocks/js/joint.all.min.js
+/csp/blocks/js/joint.shapes.blocks.js
+/csp/blocks/js/main.js
+/csp/blocks/js/mapViewer.js
 Blocks.BlocksInstaller.cls
 Blocks.Router.cls
 Blocks.WebSocket.cls

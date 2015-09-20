@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<CSP name="index.html" application="/csp/blocks/"><![CDATA[
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>Cache Blocks explorer</title>
+  <link rel="stylesheet" href="css/joint.all.min.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link id="favicon" rel="shortcut icon" href="#" />
+</head>
+
+<body>
+  <input type='checkbox' id='viewType' />
+  <div class="mapWrapper">
+    <div>
+      <div class='mapLegend'>
+      </div>
+      <div id='map'>
+        <canvas>
+        </canvas>
+      </div>
+    </div>
+  </div>
+  <div class="blocksTreeWrapper">
+    <div id="blocksViewer">
+    </div>
+    <div id='navigator'>
+    </div>
+    <div class='blocksTreeToolBar'>
+      <div id='btnZoomIn' class="icon plus"></div>
+      <div id='btnZoomToFit' class="icon zoomtofit button">fit</div>
+      <div id='btnZoomOut' class="icon minus"></div>
+      <div id='btnDownloadSVG' class="icon button">SVG</div>
+      <div id='btnDownloadPNG' class="icon button">PNG</div>
+    </div>
+  </div>
+  <div id='header'>
+    <select id='databaseSelect' disabled="" class='icon select item'>
+      <option>Loading...</option>
+    </select>
+    <div class='toggle item'>
+      <span>
+        <label for='viewType'></label>
+      </span>
+    </div>
+  </div>
+  <script src="js/joint.all.min.js"></script>
+  <script src="js/joint.shapes.blocks.js"></script>
+  <script src="js/blocksViewer.js"></script>
+  <script src="js/mapViewer.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>
+]]></CSP>
+</Export>
