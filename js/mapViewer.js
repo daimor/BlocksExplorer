@@ -8,8 +8,9 @@ var MapViewer = function (app, container) {
   this.app = app
   this.canvas = $(container).get(0)
   this.context = null
-  this.image = null
   this.colors = []
+  this.globals = []
+  this.canvases = []
 
   this.legendBlock = $('.mapWrapper .mapLegend')
 
@@ -18,8 +19,41 @@ var MapViewer = function (app, container) {
 }
 
 MapViewer.prototype.init = function () {
+  var self = this
 
   this.context = this.canvas.getContext('2d')
+
+  $(this.canvas).on('mouseout', function (event) {
+    self.app.blockInfo.empty()
+  })
+
+  $(this.canvas).on('mousemove', function (event) {
+    var x = event.offsetX
+    var y = event.offsetY
+
+    var cols = self.canvas.width / self.cellSize
+    var block = (Math.ceil(y / self.cellSize) - 1) * cols + Math.ceil(x / self.cellSize)
+
+    // var pixel = 
+    // var p = c.getImageData(x, y, 1, 1).data; 
+    self.app.blockInfo.text('Block # ' + block)
+  })
+
+  $('.mapLegend').on('click', function (event) {
+    var target = $(event.target).closest('.mapLegend>div')
+    if (target.length === 1) {
+      $('#map canvas.Active').removeClass('Active')
+      var globalName = target.text()
+      var canvas = self.canvases[globalName]
+      if (canvas) {
+        $(canvas).addClass('Active')
+      }
+    }
+  })
+
+  $('#map .mask+canvas').on('click', function () {
+    $('#map canvas.Active').removeClass('Active')
+  })
 
   this.initWS()
 }
@@ -36,6 +70,7 @@ MapViewer.prototype.initWS = function () {
 
   this.ws.onmessage = function () {
     self.wsmessage.apply(self, arguments)
+    self.ws.send('next')
   }
 }
 
@@ -43,32 +78,43 @@ MapViewer.prototype.wsmessage = function (event) {
   var self = this
   try {
     var data = JSON.parse(event.data)
-    var cols = this.image.width / this.cellSize
+    var cols = this.canvas.width / this.cellSize
     $.each(data, function (i, glob) {
-        var globalName = '^' + glob.global
-        var colors = self.colors[globalName] || null
-        if (colors !== null) {
-          $.each(glob.blocks, function (j, block) {
-            x = block % cols
-            x = x === 0 ? cols : x
-            y = Math.ceil(block / cols)
-            // console.log(block, x, y, cols, self.cellSize)
-            self.context.fillStyle = 'rgba(' + colors[0] + ',' + colors[1] + ',' + colors[2] + ',' + 255 + ')'
-            self.context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
-            self.context.strokeRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
-          })
-        }
-      })
-      // this.context.putImageData(this.image, 0, 0)
+      var globalName = '^' + glob.global
+      var canvas = self.canvases[globalName] || self.canvas 
+      var colors = self.colors[globalName] || [255, 255, 255]
+      if (colors !== null) {
+        var context = canvas.getContext('2d')
+        $.each(glob.blocks, function (j, block) {
+          var x = block % cols
+          x = x === 0 ? cols : x
+          var y = Math.ceil(block / cols)
+          context.fillStyle = '#' + rgbToHex(colors[0], colors[1], colors[2])
+          context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
+          // context.strokeRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
+        })
+      } else {
+        console.log('no color', glob)
+      }
+    })
   } catch (ex) {
 
   }
 }
 
 MapViewer.prototype.reset = function () {
+  var self = this
   this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
-  this.image = null
   this.legendBlock.empty()
+  this.colors = []
+  this.globals = []
+  for (var globalName in this.canvases) {
+    if (this.canvases.hasOwnProperty(globalName)){
+      var canvas = this.canvases[globalName]
+      delete self.canvases[globalName]
+      $(canvas).remove()
+    }
+  }
 }
 
 MapViewer.prototype.get = function (directory, blocks) {
@@ -77,13 +123,13 @@ MapViewer.prototype.get = function (directory, blocks) {
   this.app.load('rest/block/3', {
     directory: directory
   }, function (blockData) {
-    self.initImage(blocks)
+    self.initCanvas(blocks)
     self.initColors(blockData.nodes)
     self.ws.send('getblocks\x01' + directory)
   })
 }
 
-MapViewer.prototype.initImage = function (blocks) {
+MapViewer.prototype.initCanvas = function (blocks) {
   var cols = Math.ceil(Math.sqrt(blocks))
   var canvasWidth = $(this.canvas).width()
   if ((canvasWidth / cols) > 20) {
@@ -96,9 +142,9 @@ MapViewer.prototype.initImage = function (blocks) {
   var width = cols * this.cellSize
   var height = rows * this.cellSize
 
-  this.image = this.context.createImageData(width, height)
   this.canvas.width = width
   this.canvas.height = height
+  $('#map .mask').width(width).height(height)
 
   for (var x = 0; x <= width; x += this.cellSize) {
     this.context.moveTo(x, 0)
@@ -112,7 +158,6 @@ MapViewer.prototype.initImage = function (blocks) {
 
   this.context.strokeStyle = "rgba(222, 222, 222, 255)"
   this.context.stroke()
-  this.image = this.context.getImageData(0, 0, width, height)
 }
 
 MapViewer.prototype.initColors = function (globals) {
@@ -137,17 +182,30 @@ MapViewer.prototype.initColors = function (globals) {
       c_green = (1.3 - ksi) * 2
     }
 
-    c_red = Math.trunc(c_red * 256)
-    c_green = Math.trunc(c_green * 256)
-    c_blue = Math.trunc(c_blue * 256)
+    c_red = Math.trunc(c_red * 255)
+    c_green = Math.trunc(c_green * 255)
+    c_blue = Math.trunc(c_blue * 255)
     var globalName = node.print
     self.colors[globalName] = [c_red, c_green, c_blue]
-    $('<div>')
+    self.globals[[c_red, c_green, c_blue]] = globalName
+    self.canvases[globalName] = $('<canvas>')
+      .attr('width', self.canvas.width)
+      .attr('height', self.canvas.height)
+      .prependTo(self.canvas.parentElement).get(0)
+    // var context = self.canvases[globalName].getContext('2d')
+    // context.fillStyle = '#' + rgbToHex(c_red, c_green, c_blue)
+      $('<div>')
       .text(globalName)
       .append(
         $('<span>')
-        .css('background-color', 'rgb(' + c_red + ', ' + c_green + ', ' + c_blue + ')')
+        .css('background-color', '#' + rgbToHex(c_red, c_green, c_blue))
       )
       .appendTo(self.legendBlock)
   })
+}
+
+function rgbToHex(r, g, b) {
+  if (r > 255 || g > 255 || b > 255)
+    throw "Invalid color component"
+  return (((r << 16) | (g << 8) | b) + 0x1000000).toString(16).substr(-6)
 }

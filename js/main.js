@@ -7,6 +7,7 @@ var App = function () {
   this.databaseSelect = $('#databaseSelect')
   this.viewType = $('#viewType')
   this.database = null
+  this.blockInfo = $('#header .blockInfo')
 
   this.elements = {
     viewType: $('#viewType').get(0),
@@ -72,6 +73,7 @@ App.prototype.setDatabase = function (directory, blocks) {
   this.database = directory
 
   if (this.viewType.is(':checked')) {
+    this.mapViewer.reset()
     this.mapViewer.get(directory, blocks)
   } else {
     this.blocksViewer.reset()
@@ -86,6 +88,7 @@ App.prototype.reset = function () {
   this.databaseSelect.find('option:first').attr('selected', true)
   this.database = null
   this.saveState()
+  this.blockInfo.empty()
 }
 
 App.prototype.saveState = function () {

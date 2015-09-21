@@ -21,7 +21,11 @@
         Set len=32656
         Set data=..Read(.len, .status, timeout)
         If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketClosed Quit
+        set timeouted = 0
         If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketTimeout {
+            set timeouted = 1
+        }
+        if timeouted||(data="next") {
             if dataGN'="",$d(@dataGN)>1 {
                 set result=[]
                 set i=""
