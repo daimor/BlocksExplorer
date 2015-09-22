@@ -177,14 +177,62 @@ svg text.blocks-nodes-text tspan:hover {
   width: 100%;
 }
 
+.mapWrapper .legendWrapper {
+  overflow: auto;
+  width: 250px;
+  display: flex;
+  padding-bottom: 10px;
+}
+
 .mapWrapper .mapLegend {
   width: 250px;
   border-right: 2px solid beige;
   overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  float: left;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
+  min-height: -webkit-min-content;
+  min-height: -moz-min-content;
+  min-height: min-content;
+  display: flex;
+  padding-right: 10px;
+  padding-left: 10px;
+  box-sizing: border-box;
 }
 
-.mapWrapper .mapLegend>div {
+ul.mapLegend>li {
+  font-size: 12px;
+  font-family: monospace;
+  position: relative;
+  list-style: none;
   cursor: pointer;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: 100%;
+  overflow: hidden;
+}
+
+ul.mapLegend>li:hover {
+  background-color: #eee;
+}
+
+ul.mapLegend>li>span.legend {
+  width: 10px;
+  height: 10px;
+  display: block;
+  float: left;
+  margin-right: 5px;
+  margin-left: 0px;
+}
+
+.mapLegend li::before {
+  content: attr(data-count);
+  float: right;
+  margin-left: 5px;
 }
 
 .mapWrapper #map {
@@ -217,24 +265,6 @@ canvas.Active {
 
 canvas.Active~.mask {
   display: block !important;
-}
-
-.mapLegend div {
-  font-size: 12px;
-  padding-left: 20px;
-  width: 100%;
-  position: relative;
-}
-
-.mapLegend span {
-  width: 10px;
-  height: 10px;
-  display: block;
-  float: left;
-  margin-right: 5px;
-  position: absolute;
-  top: 0;
-  left: 5px;
 }
 
 .icon {

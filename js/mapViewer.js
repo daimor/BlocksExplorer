@@ -11,6 +11,7 @@ var MapViewer = function (app, container) {
   this.colors = []
   this.globals = []
   this.canvases = []
+  this.legend = []
 
   this.legendBlock = $('.mapWrapper .mapLegend')
 
@@ -39,8 +40,8 @@ MapViewer.prototype.init = function () {
     self.app.blockInfo.text('Block # ' + block)
   })
 
-  $('.mapLegend').on('click', function (event) {
-    var target = $(event.target).closest('.mapLegend>div')
+  $('ul.mapLegend').on('click', function (event) {
+    var target = $(event.target).closest('ul.mapLegend>li')
     if (target.length === 1) {
       $('#map canvas.Active').removeClass('Active')
       var globalName = target.text()
@@ -70,7 +71,7 @@ MapViewer.prototype.initWS = function () {
 
   this.ws.onmessage = function () {
     self.wsmessage.apply(self, arguments)
-    self.ws.send('next')
+    // self.ws.send('next')
   }
 }
 
@@ -81,7 +82,14 @@ MapViewer.prototype.wsmessage = function (event) {
     var cols = this.canvas.width / this.cellSize
     $.each(data, function (i, glob) {
       var globalName = '^' + glob.global
-      var canvas = self.canvases[globalName] || self.canvas 
+      var legend = self.legend[globalName]
+      if (legend) {
+        var count = parseInt(legend.attr('data-count')) || 0
+        count += glob.blocks.length
+        legend.attr('data-count', count)
+        legend.css('order', count)
+      }
+      var canvas = self.canvases[globalName] || self.canvas
       var colors = self.colors[globalName] || [255, 255, 255]
       if (colors !== null) {
         var context = canvas.getContext('2d')
@@ -91,7 +99,7 @@ MapViewer.prototype.wsmessage = function (event) {
           var y = Math.ceil(block / cols)
           context.fillStyle = '#' + rgbToHex(colors[0], colors[1], colors[2])
           context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
-          // context.strokeRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
+            // context.strokeRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
         })
       } else {
         console.log('no color', glob)
@@ -108,8 +116,9 @@ MapViewer.prototype.reset = function () {
   this.legendBlock.empty()
   this.colors = []
   this.globals = []
+  this.legend = []
   for (var globalName in this.canvases) {
-    if (this.canvases.hasOwnProperty(globalName)){
+    if (this.canvases.hasOwnProperty(globalName)) {
       var canvas = this.canvases[globalName]
       delete self.canvases[globalName]
       $(canvas).remove()
@@ -192,12 +201,13 @@ MapViewer.prototype.initColors = function (globals) {
       .attr('width', self.canvas.width)
       .attr('height', self.canvas.height)
       .prependTo(self.canvas.parentElement).get(0)
-    // var context = self.canvases[globalName].getContext('2d')
-    // context.fillStyle = '#' + rgbToHex(c_red, c_green, c_blue)
-      $('<div>')
+      // var context = self.canvases[globalName].getContext('2d')
+      // context.fillStyle = '#' + rgbToHex(c_red, c_green, c_blue)
+    self.legend[globalName] = $('<li>')
       .text(globalName)
-      .append(
+      .prepend(
         $('<span>')
+        .addClass('legend')
         .css('background-color', '#' + rgbToHex(c_red, c_green, c_blue))
       )
       .appendTo(self.legendBlock)
