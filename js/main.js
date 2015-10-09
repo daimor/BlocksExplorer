@@ -20,6 +20,10 @@ var App = function () {
     mapViewer: $('#map canvas').get(0)
   }
 
+  var wsUrl = ((window.location.protocol == "https:") ? "wss:" : "ws:" + "//" + window.location.host)
+  wsUrl += '/blocks/Blocks.WebSocket.cls'
+  this.ws = new FancyWebSocket(wsUrl)
+
   this.blocksViewer = new BlocksViewer(this, this.elements.blocksViewer)
 
   this.mapViewer = new MapViewer(this, this.elements.mapViewer)

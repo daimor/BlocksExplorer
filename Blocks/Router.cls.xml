@@ -150,7 +150,6 @@ add(name,dir)
         }
     } catch error {
     }
-    CLOSE 63
     
     if $isobject(error) {
         quit error.AsStatus()

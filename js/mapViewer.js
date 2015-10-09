@@ -35,14 +35,14 @@ MapViewer.prototype.init = function () {
     var cols = self.canvas.width / self.cellSize
     var block = (Math.ceil(y / self.cellSize) - 1) * cols + Math.ceil(x / self.cellSize)
 
-    // var pixel = 
-    // var p = c.getImageData(x, y, 1, 1).data; 
     self.app.blockInfo.text('Block # ' + block)
   })
 
   $('ul.mapLegend').on('click', function (event) {
     var target = $(event.target).closest('ul.mapLegend>li')
     if (target.length === 1) {
+      $('ul.mapLegend>li.Active').removeClass('Active')
+      $(target).addClass('Active')
       $('#map canvas.Active').removeClass('Active')
       var globalName = target.text()
       var canvas = self.canvases[globalName]
@@ -54,6 +54,7 @@ MapViewer.prototype.init = function () {
 
   $('#map .mask+canvas').on('click', function () {
     $('#map canvas.Active').removeClass('Active')
+    $('ul.mapLegend>li.Active').removeClass('Active')
   })
 
   this.initWS()
@@ -61,24 +62,15 @@ MapViewer.prototype.init = function () {
 
 MapViewer.prototype.initWS = function () {
   var self = this
-  var wsUrl = ((window.location.protocol == "https:") ? "wss:" : "ws:" + "//" + window.location.host)
-  wsUrl += '/blocks/Blocks.WebSocket.cls'
-  this.ws = new WebSocket(wsUrl)
 
-  this.ws.onopen = function () {}
-
-  this.ws.onclose = function () {}
-
-  this.ws.onmessage = function () {
-    self.wsmessage.apply(self, arguments)
-    // self.ws.send('next')
-  }
+  self.app.ws.bind('blocks_map', function (data) {
+    self.loadMap(data)
+  })
 }
 
-MapViewer.prototype.wsmessage = function (event) {
+MapViewer.prototype.loadMap = function (data) {
   var self = this
   try {
-    var data = JSON.parse(event.data)
     var cols = this.canvas.width / this.cellSize
     $.each(data, function (i, glob) {
       var globalName = '^' + glob.global
@@ -99,10 +91,7 @@ MapViewer.prototype.wsmessage = function (event) {
           var y = Math.ceil(block / cols)
           context.fillStyle = '#' + rgbToHex(colors[0], colors[1], colors[2])
           context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
-            // context.strokeRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
         })
-      } else {
-        console.log('no color', glob)
       }
     })
   } catch (ex) {
@@ -134,7 +123,9 @@ MapViewer.prototype.get = function (directory, blocks) {
   }, function (blockData) {
     self.initCanvas(blocks)
     self.initColors(blockData.nodes)
-    self.ws.send('getblocks\x01' + directory)
+    self.app.ws.send('blocks_map', {
+      'directory': directory
+    })
   })
 }
 

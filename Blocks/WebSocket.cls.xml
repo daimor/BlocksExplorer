@@ -13,64 +13,111 @@
 <Method name="Server">
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-    Set $ZT="Error"
     Set timeout=.5
-    set backJob=""
-    set dataGN=""
-    For  {
-        Set len=32656
-        Set data=..Read(.len, .status, timeout)
-        If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketClosed Quit
-        set timeouted = 0
-        If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketTimeout {
-            set timeouted = 1
-        }
-        if timeouted||(data="next") {
-            if dataGN'="",$d(@dataGN)>1 {
-                set result=[]
-                set i=""
-                kill blocks
-                for {
-                    set i=$o(@dataGN@(i),1,blockInfo)
-                    quit:i=""
-                    set $lb(block,global)=blockInfo
-                    if global="" set global="_"
-                    set blocks(global,block)=""
-                    kill @dataGN@(i)
-                }
-                set global=""
-                for {
-                    set global=$o(blocks(global))
-                    quit:global=""
-                    set glob={"global":global}
-                    set glob.blocks=[]
-                    set block=""
-                    for {
-                        set block=$o(blocks(global,block))
-                        quit:block=""
-                        do glob.blocks.$push(block)
-                    }
-                    do result.$push(glob)
-                }
-                set status=..Write(result.$toJSON())
+    set quit=0
+    set dataGN="",event=""
+    #dim queue As %SYSTEM.WorkMgrIPQ = ""
+    #dim exception As %Exception.AbstractException
+    Set len=32656
+    while 'quit {
+        try {
+            Set data=..Read(.len, .status, $select($isobject(event):0.1,1:timeout))
+            If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketClosed {
+                set quit=1
+                quit
             }
-        } elseif data="exit" {
-            Quit
-        } elseif $p(data,$c(1))="getblocks" {
-            set directory=$p(data,$c(1),2)
-            job ..GetBlocksMap(directory)
-            set backJob=$zchild
-            set dataGN=$na(^CacheTemp.BlocksMap(backJob))
-        } elseif data="ping" {
-            Set status=..Write("pong")
-        } else {
-            Set data="'"_data_"'"_" (length="_len_") recieved on "_$ZDate(+$Horolog,2)_" at "_$ZTime($Piece($Horolog,",",2),3)_" NameSpace="_$NameSpace
-            Set status=..Write(data)
+            set timeouted = 0
+            If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketTimeout {
+                set timeouted = 1
+            }
+            if timeouted {
+                if $isobject(queue),event'="" {
+                    set atEnd=0,nextRead=0
+                    set response={"event": event, "data": []}
+                    kill blocksData
+                    set countData=0
+                    while ('atEnd)&&('nextRead) {
+                        Set data=queue.Get(0)
+                        quit:data=""
+                        if $listget(data)=1,$i(countData) {
+                            if $p(event,"_")="blocks" {
+                                set $listbuild(parent,block,global)=$listget(data,2)
+                                if $p(event,"_",2)="tree" {
+                                    if '$data(blocksData(parent)) {
+                                        set blocksData(parent)={"block": parent, "child": []}
+                                        do response.data.$push(blocksData(parent))
+                                    }
+                                    do blocksData(parent).child.$push(block)
+                                } else {
+                                    if '$data(blocksData(global)) {
+                                        set blocksData(global)={"global": global, "blocks": []}
+                                        do response.data.$push(blocksData(global))
+                                    }
+                                    do blocksData(global).blocks.$push(block)
+                                }
+                            }
+                        } elseif $listget(data)=0 {
+                            Set sc=queue.Decode(data,,.atend)
+                            set nextRead=1
+                            $$$ThrowOnError(sc)
+                        }
+                        set nextRead=nextRead||(countData>=5000)
+                    }
+                    if response.data.$size() > 0 {
+                        do ..Write(response.$toJSON())
+                    }
+                    if atEnd {
+                        set queue=""
+                    }
+                }
+                quit
+            }
+            set request=##class(%Object).$fromJSON(data)
+            set event=request.event
+            if $piece(event,"_")="blocks" {
+                set asTree=($piece(event,"_",2)="tree")
+                
+                #; clear previous queue if it still exists
+                if $isobject(queue) {
+                    do queue.Clear(0)
+                }
+                Set ^||%ISC.WorkQueueMgr("ForceJobs")=2
+                Set queue=$system.WorkMgrIPQ.Initialize("/multicompile=1",.sc)
+                $$$ThrowOnError(sc)
+                set worker="##class(Blocks.WebSocket).GetBlocks"
+                Set sc=queue.Queue(worker,request.data.directory,asTree) 
+                if $$$ISERR(sc) {
+                    set queue=""
+                    set event=""
+                    $$$ThrowOnError(sc)
+                }
+            } elseif event="ping" {
+                do ..Write({
+                    "event": "ping",
+                    "data": "pong"
+                }.$toJSON())
+            } elseif event="exit" {
+                do ..Write({
+                    "event": "exit",
+                    "data": "OK"
+                }.$toJSON())
+                set quit=1
+                quit
+            } else {
+                do ..Write({
+                    "event": "error",
+                    "data": ("Unrecognized event: "_event)
+                }.$toJSON())
+            }
+        } catch exception {
+            set queue=""
+            do ..Write({
+                "event": "error",
+                "data": exception.DisplayString()
+            }.$toJSON())
         }
     }
     Set status=..EndServer()
-    Quit $$$OK
-Error // Error
     Quit $$$OK
 ]]></Implementation>
 </Method>
@@ -81,32 +128,32 @@ Error // Error
 ]]></Implementation>
 </Method>
 
-<Method name="GetBlocksMap">
+<Method name="GetBlocks">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>aDirectory:%String=""</FormalSpec>
+<FormalSpec>aDirectory:%String="",aAsTree:%Boolean=0</FormalSpec>
 <Implementation><![CDATA[
     quit:aDirectory="" 0
     new $namespace
-    zn "%sys"
+    znspace "%sys"
     
     OPEN 63:"^^"_aDirectory
-    set tSC=..BlocksMap(3,,,.count)
+    
+    set tSC=..ReadBlocks(aAsTree,3,,,.count)
+    $$$ThrowOnError(tSC)
         
     CLOSE 63
     quit $$$OK
 ]]></Implementation>
 </Method>
 
-<Method name="BlocksMap">
+<Method name="ReadBlocks">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>aBlockId:%Integer=3,aGlobal:%String="",aHasLong=0,aCount</FormalSpec>
+<FormalSpec>aAsTree:%Boolean=0,aBlockId:%Integer=3,aGlobal:%String="",aHasLong=0,aCount</FormalSpec>
 <Implementation><![CDATA[
     new $namespace
     znspace "%SYS"
     quit:aBlockId=0 0
-    if $i(aCount),aGlobal'="",$i(aCount(aGlobal)) do add(aBlockId,aGlobal)
-    
-    
+
     #dim error As %Exception.AbstractException = ""
     try {
         View aBlockId
@@ -117,14 +164,14 @@ Error // Error
                 For N=1:1 {
                     Set X=$VIEW(N*2,-6)
                     Quit:X=""
-                    s gdview=$a(X)
-                    if $lf($lb(5,7,3),gdview) {
-                        set cnt=$p(X,",",2)
-                        if $i(aCount,cnt),$i(aCount(aGlobal),cnt)
-                        set blocks=$p(X,",",4,*)
+                    set gdview=$ascii(X)
+                    if $listfind($listbuild(5,7,3),gdview) {
+                        set cnt=$piece(X,",",2)
+                        if $increment(aCount,cnt),$increment(aCount(aGlobal),cnt)
+                        set blocks=$piece(X,",",4,*)
                         for i=1:1:cnt {
-                            set nextBlock=$p(X,",",3+i)
-                            do add(nextBlock,aGlobal)
+                            set nextBlock=$piece(X,",",3+i)
+                            do add(nextBlock,aGlobal,8192)
                         }
                     }
                 }
@@ -135,25 +182,30 @@ Error // Error
                 Quit:X=""
                 Set nextBlock=$VIEW(N*2,-5)
                 if blockType=9 set aGlobal=X
-                ;continue:aGlobal'="DeepSee.Index"
-                s haslong=0
-                i $p($v(N*2,-6),",",1) {
-                    s haslong=1
+                set haslong=0
+                if $piece($view(N*2,-6),",",1) {
+                    set haslong=1
                 }
-                set nodes($i(nodes))=$lb(nextBlock,aGlobal,haslong)
+                set nodes($increment(nodes))=$listbuild(nextBlock,aGlobal,haslong)
+                set offset=$$toInt($view(0,0,-4))
+                do add(nextBlock,aGlobal,offset)
             }
         }
         
-        f i=1:1:nodes {
-            do ..BlocksMap($lg(nodes(i)),$lg(nodes(i),2),$lg(nodes(i),3),.aCount)
+        for i=1:1:nodes {
+            do ..ReadBlocks(aAsTree,$listget(nodes(i)),$listget(nodes(i),2),$listget(nodes(i),3),.aCount)
         }
     } catch error {
     }    
         
     quit $$$OK
-add(blockId,global)
-    set ind=$o(^CacheTemp.BlocksMap($job,""),-1)+1
-    set ^CacheTemp.BlocksMap($job,ind)=$lb(blockId,global)
+toInt(bytes)
+    
+    quit bytes
+add(blockId,global,fill)
+    set data=$listbuild(aBlockId,blockId)
+    if 'aAsTree set data=data_$listbuild(global,fill)
+    do %ISCIPQ.Put($listbuild(1,data))
 ]]></Implementation>
 </Method>
 </Class>

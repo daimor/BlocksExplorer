@@ -26,23 +26,68 @@ BlocksViewer.prototype.reset = function () {
   this.graph.resetCells()
 }
 
-BlocksViewer.prototype.update = function (data) {
-  var self = this
-
-  this.reset()
-}
-
 BlocksViewer.prototype.get = function (blockId) {
   var self = this
 
-  if (this.blocks[blockId]) {
-    var block = this.graph.getCell(this.blocks[blockId])
-    block.remove()
+  if (false) {
+    self.app.ws.send('blocks_tree', {
+      'directory': this.app.database
+    })
+  } else {
+    if (this.blocks[blockId]) {
+      var block = this.graph.getCell(this.blocks[blockId])
+      block.remove()
+    }
+    this.app.load('rest/block/' + blockId, {
+      directory: this.app.database
+    }, function (data) {
+      self.add(blockId, data)
+    })
   }
-  this.app.load('rest/block/' + blockId, {
-    directory: this.app.database
-  }, function (data) {
-    self.add(blockId, data)
+}
+
+BlocksViewer.prototype.loadTree = function (data) {
+  var self = this
+
+  var addBlock = function (blockId, parentBlock) {
+    console.log(parentBlock, blockId)
+    return;
+    var parent = (!parentBlock) ? null : self.blocks[parentBlock] || addBlock(parentBlock, null)
+
+    var block = new joint.shapes.basic.Circle({
+      // width: 50,
+      // height: 50,
+      attrs: {
+        text: {
+          text: blockId
+        }
+      }
+    })
+
+    self.blocks[blockId] = block
+    self.graph.addCell(block)
+
+    if (parent) {
+      var link = new joint.dia.Link({
+        source: {
+          id: parent.id
+        },
+        target: {
+          id: block.id
+        }
+      })
+      self.graph.addCell(link)
+    } else {
+      block.position(50,50)
+    }
+
+    return block
+  }
+
+  _.each(data, function (parentBlock) {
+    _.each(parentBlock.child, function (child) {
+      addBlock(child, parentBlock.block)
+    })
   })
 }
 
@@ -85,22 +130,26 @@ BlocksViewer.prototype.add = function (blockId, blockData) {
     this.paperScroller.center()
     this.paperScroller.zoomToFit()
   }
-  this.layout(block)
+  this.layout()
   this.paperScroller.center(block.getBBox().x, block.getBBox().y)
 }
 
-BlocksViewer.prototype.layout = function (block) {
-  joint.layout.DirectedGraph.layout(this.graph, {
+BlocksViewer.prototype.layout = function (options) {
+  joint.layout.DirectedGraph.layout(this.graph, _.extend({
     setLinkVertices: false,
     nodeSep: 100,
     rankSep: 100,
     edgeSep: 50,
     rankDir: 'LR'
-  })
+  }, options))
 }
 
 BlocksViewer.prototype.init = function () {
   var self = this
+
+  self.app.ws.bind('blocks_tree', function (data) {
+    self.loadTree(data)
+  })
 
   this.graph = new joint.dia.Graph
 
@@ -134,12 +183,28 @@ BlocksViewer.prototype.init = function () {
 
   $(this.container).append(this.paperScroller.render().el)
 
+  // this.graphLayout = new joint.layout.TreeLayout({
+  //   graph: this.graph,
+  //   verticalGap: 20,
+  //   horizontalGap: 40
+  // })
+
+  // var treeLayoutView = new joint.ui.TreeLayoutView({
+  //   paper: this.paper,
+  //   model: this.graphLayout
+  // })
+
+  // this.graphLayout.layout()
+
   this.nav = new joint.ui.Navigator({
     paperScroller: this.paperScroller,
     width: 300,
     height: 200,
     padding: 10,
-    zoomOptions: { max: 2, min: 0.2 }
+    zoomOptions: {
+      max: 2,
+      min: 0.2
+    }
   })
   this.nav.$el.appendTo('#navigator')
   this.nav.render()
@@ -151,10 +216,6 @@ BlocksViewer.prototype.init = function () {
       self.get(node.blockId)
     }
   })
-
-  // this.app.elements.blocksViewer.addEventListener('mousewheel', function (e) {
-  //   self.zoom(Math.max(-self.ZOOM_DELTA, Math.min(self.ZOOM_DELTA, e.wheelDelta || -e.detail)))
-  // })
 
   this.app.elements.zoomInBtn.addEventListener('click', function () {
     self.zoom(self.ZOOM_DELTA)
@@ -176,7 +237,7 @@ BlocksViewer.prototype.init = function () {
         .attr('download', 'blocks.svg')
         .text('download')
       link.get(0).click()
-      // link.remove()
+        // link.remove()
     })
   })
   this.app.elements.downloadPNGBtn.addEventListener('click', function () {
@@ -206,6 +267,31 @@ BlocksViewer.prototype.init = function () {
     s.parentNode.removeChild(s)
     return w
   })()
+
+  this.initWS()
+}
+
+BlocksViewer.prototype.initWS = function () {
+  var self = this
+
+  this.app.ws.onmessage = function () {
+    if (self.app.viewType.is(':checked')) {
+      return
+    }
+    self.wsmessage.apply(self, arguments)
+  }
+}
+
+BlocksViewer.prototype.wsmessage = function (event) {
+  var self = this
+  try {
+    var data = JSON.parse(event.data)
+    $.each(data, function (i, glob) {
+
+    })
+  } catch (ex) {
+
+  }
 }
 
 BlocksViewer.prototype.zoom = function (delta) {
