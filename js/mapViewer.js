@@ -134,8 +134,8 @@ MapViewer.prototype.initCanvas = function (blocks) {
   var canvasWidth = $(this.canvas).width()
   if ((canvasWidth / cols) > 20) {
     cols = Math.ceil(canvasWidth / 20)
-  } else if ((canvasWidth / cols) < 5) {
-    cols = Math.ceil(canvasWidth / 5)
+  } else if ((canvasWidth / cols) < 10) {
+    cols = Math.ceil(canvasWidth / 10)
   }
   this.cellSize = Math.ceil(canvasWidth / cols)
   var rows = Math.ceil(blocks / cols)

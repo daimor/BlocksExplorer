@@ -1,15 +1,14 @@
 var BlocksViewer = function (app, container) {
-  var self = this
-
   this.app = app
   this.container = $(container)
   this.blocks = []
   this.blockData = []
   this.blocksParent = []
+  this.blocksLeft = []
 
   this.ZOOM_DELTA = 0.2
   this.MIN_PAPER_SCALE = 0.2
-  this.MAX_PAPER_SCALE = 4
+  this.MAX_PAPER_SCALE = 2
   this.SYMBOL_12_WIDTH = 7
 
   this.init()
@@ -17,11 +16,10 @@ var BlocksViewer = function (app, container) {
 }
 
 BlocksViewer.prototype.reset = function () {
-  var self = this
-
   this.blocks = []
   this.blockData = []
   this.blocksParent = []
+  this.blocksLeft = []
 
   this.graph.resetCells()
 }
@@ -50,8 +48,6 @@ BlocksViewer.prototype.loadTree = function (data) {
   var self = this
 
   var addBlock = function (blockId, parentBlock) {
-    console.log(parentBlock, blockId)
-    return;
     var parent = (!parentBlock) ? null : self.blocks[parentBlock] || addBlock(parentBlock, null)
 
     var block = new joint.shapes.basic.Circle({
@@ -78,7 +74,7 @@ BlocksViewer.prototype.loadTree = function (data) {
       })
       self.graph.addCell(link)
     } else {
-      block.position(50,50)
+      block.position(50, 50)
     }
 
     return block
@@ -120,18 +116,30 @@ BlocksViewer.prototype.add = function (blockId, blockData) {
     self.graph.addCell(link)
   }
 
+  // var leftBlock = this.blocksLeft[blockId]
+  // if (leftBlock) {
+  //   var link = new joint.shapes.blocks.Link({
+  //     source: {
+  //       id: this.blocks[leftBlock],
+  //       port: 'right'
+  //     },
+  //     target: {
+  //       id: block.id,
+  //       port: 'left'
+  //     }
+  //   })
+  //   self.graph.addCell(link)
+  // }
+
+  if (blockData.link && blockData.link > 0) {
+    self.blocksLeft[blockData.link] = blockId
+  }
   _.each(blockData.nodes, function (node, nodeId) {
     var nodeBlockId = node.blockId || 0
     if (nodeBlockId === 0) return
 
     self.blocksParent[node.blockId] = blockId
   })
-  if (blockId === 3) {
-    this.paperScroller.center()
-    this.paperScroller.zoomToFit()
-  }
-  this.layout()
-  this.paperScroller.center(block.getBBox().x, block.getBBox().y)
 }
 
 BlocksViewer.prototype.layout = function (options) {
@@ -139,7 +147,7 @@ BlocksViewer.prototype.layout = function (options) {
     setLinkVertices: false,
     nodeSep: 100,
     rankSep: 100,
-    edgeSep: 50,
+    edgeSep: 20,
     rankDir: 'LR'
   }, options))
 }
@@ -154,7 +162,6 @@ BlocksViewer.prototype.init = function () {
   this.graph = new joint.dia.Graph
 
   this.paper = new joint.dia.Paper({
-    // el: this.container,
     width: this.container.outerWidth(),
     height: this.container.outerHeight(),
     gridSize: 20,
@@ -163,10 +170,26 @@ BlocksViewer.prototype.init = function () {
     elementView: joint.shapes.blocks.BlockView
   })
 
+  this.graph.on('add', function (cell) {
+    if (cell.isLink()) {
+      self.layout()
+      var block = self.graph.getCell(cell.get('target').id)
+      var bbox = block.getBBox()
+      self.paperScroller.center(bbox.x + (bbox.width / 2), bbox.y)
+    } else if (cell.blockData.blockId == 3) {
+      self.paperScroller.zoomToFit({
+        padding: 20
+      })
+      self.zoom(self.MAX_PAPER_SCALE)
+    }
+  })
+
   this.graph.on('remove', function (cell, collection, options) {
     if (cell.isLink()) {
       var child = this.getCell(cell.get('target').id)
-      child.remove()
+      if (child) {
+        child.remove()
+      }
     } else {
       var blockId = cell.get('blockData').blockId
       delete self.blocks[blockId]
@@ -183,23 +206,10 @@ BlocksViewer.prototype.init = function () {
 
   $(this.container).append(this.paperScroller.render().el)
 
-  // this.graphLayout = new joint.layout.TreeLayout({
-  //   graph: this.graph,
-  //   verticalGap: 20,
-  //   horizontalGap: 40
-  // })
-
-  // var treeLayoutView = new joint.ui.TreeLayoutView({
-  //   paper: this.paper,
-  //   model: this.graphLayout
-  // })
-
-  // this.graphLayout.layout()
-
   this.nav = new joint.ui.Navigator({
     paperScroller: this.paperScroller,
-    width: 300,
-    height: 200,
+    width: 240,
+    height: 180,
     padding: 10,
     zoomOptions: {
       max: 2,
@@ -225,6 +235,7 @@ BlocksViewer.prototype.init = function () {
   })
   this.app.elements.zoomToFitBtn.addEventListener('click', function () {
     self.paperScroller.zoomToFit()
+    self.zoom(self.MAX_PAPER_SCALE)
   })
   this.app.elements.downloadSVGBtn.addEventListener('click', function () {
     self.paper.toSVG(function (svg) {

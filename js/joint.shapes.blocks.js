@@ -14,11 +14,11 @@ if (typeof exports === 'object') {
 
 joint.shapes.blocks = {}
 
-joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint.shapes.basic.PortsModelInterface, {
+joint.shapes.blocks.Block = joint.shapes.devs.Model.extend(_.extend({}, joint.shapes.basic.PortsModelInterface, {
 
   markup: [
     '<g class="rotatable">',
-    '<g class="scalable">',
+    '<g class="scalable block">',
     '<rect class="blocks-id-rect"/>',
     '<rect class="blocks-info-rect"/>',
     '<rect class="blocks-nodes-rect"/>',
@@ -26,14 +26,15 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
     '<text class="blocks-id-text"/>',
     '<text class="blocks-info-text"/>',
     '<text class="blocks-nodes-text"/>',
-    '<g class="inPorts"/>',
-    '<g class="outPorts"/>',
+    '<g class="leftPort extPorts allPorts"/>',
+    '<g class="rightPort extPorts allPorts"/>',
+    '<g class="upPort extPorts allPorts"/>',
+    '<g class="outPorts allPorts"/>',
     '</g>'
   ].join(''),
   portMarkup: [
     '<g class="port port<%= id %>">',
     '<circle class="port-body"/>',
-    '<text class="port-label"/>',
     '</g>'
   ].join(''),
 
@@ -46,7 +47,7 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
       height: 200
     },
 
-    inPorts: ['up'],
+    extPorts: ['up', 'left', 'right'],
     outPorts: [],
 
     attrs: {
@@ -85,20 +86,9 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
         'ref-x': 8
       },
       '.port-body': {
-        r: 6,
+        r: 4,
         magnet: true,
         stroke: '#000000'
-      },
-      '.inPorts .port-label': {
-        x: -15,
-        dy: 4,
-        'text-anchor': 'end',
-        fill: '#000000'
-      },
-      '.outPorts .port-label': {
-        x: 5,
-        dy: 1,
-        fill: '#000000'
       }
     },
 
@@ -120,7 +110,7 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
       type: 'info',
       text: [
         'Type: ' + this.blockData.type + '      ' +
-                  this.blockData.typename,
+        this.blockData.typename,
         'Link: ' + (this.blockData.link || 0)
       ]
     }]
@@ -168,6 +158,8 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
       case 6:
         this.fillColor = 'honeydew'
         break
+      case 24:
+      case 66:
       default:
         this.fillColor = 'powderblue'
     }
@@ -175,7 +167,7 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
     this.updateRectangles()
 
     this.updatePortsAttrs()
-    this.on('change:inPorts change:outPorts', this.updatePortsAttrs, this)
+    this.on('change:allPorts', this.updatePortsAttrs, this)
 
     this.on('change:name change:attributes change:methods', function () {
       this.updateRectangles()
@@ -216,17 +208,42 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
     this.attributes.attrs.rect.width = this.defaults.size.width
   },
 
+  updatePortsAttrs: function () {
+    var currAttrs = this.get('attrs')
+    _.each(this._portSelectors, function (selector) {
+      if (currAttrs[selector]) delete currAttrs[selector]
+    })
+
+    this._portSelectors = []
+
+    var attrs = {}
+
+    _.each(this.get('extPorts'), function (portName, index, ports) {
+      var portAttributes = this.getPortAttrs(portName, index, 1, '.' + portName + 'Port', 'ext')
+      this._portSelectors = this._portSelectors.concat(_.keys(portAttributes))
+      _.extend(attrs, portAttributes)
+    }, this)
+
+    _.each(this.get('outPorts'), function (portName, index, ports) {
+      var portAttributes = this.getPortAttrs(portName, index, ports.length, '.outPorts', 'out')
+      this._portSelectors = this._portSelectors.concat(_.keys(portAttributes))
+      _.extend(attrs, portAttributes)
+    }, this)
+
+    this.attr(attrs, {
+      silent: true
+    })
+    this.processPorts()
+    this.trigger('process:ports')
+  },
+
   getPortAttrs: function (portName, index, total, selector, type) {
     var attrs = {}
 
     var portClass = 'port' + index
     var portSelector = selector + '>.' + portClass
-    var portLabelSelector = portSelector + '>.port-label'
     var portBodySelector = portSelector + '>.port-body'
 
-    attrs[portLabelSelector] = {
-      text: ''
-    }
     attrs[portBodySelector] = {
       port: {
         id: portName || _.uniqueId(type),
@@ -234,13 +251,34 @@ joint.shapes.blocks.Block = joint.shapes.basic.Generic.extend(_.extend({}, joint
       }
     }
 
-    attrs[portSelector] = {
-      ref: '.blocks-nodes-rect',
-      'ref-y': (index + 0.5) * (1 / total)
+    var ref,
+      refX,
+      refY,
+      refDX,
+      refDY
+    if (portName === 'up') {
+      ref = '.blocks-id-rect'
+      refY = 8
+    } else if (portName === 'left') {
+      ref = '.blocks-id-rect'
+      refX = 0.5
+      refY = 0
+    } else if (portName === 'right') {
+      ref = '.block'
+      refX = 0.5
+      refDY = 0
+    } else {
+      ref = '.blocks-nodes-rect'
+      refY = (index + 0.5) * (1 / total)
+      refDX = 0
     }
 
-    if (selector === '.outPorts') {
-      attrs[portSelector]['ref-dx'] = 0
+    attrs[portSelector] = {
+      ref: ref,
+      'ref-x': refX,
+      'ref-y': refY,
+      'ref-dx': refDX,
+      'ref-dy': refDY
     }
 
     return attrs
@@ -271,6 +309,35 @@ joint.shapes.blocks.Link = joint.dia.Link.extend({
 })
 
 joint.shapes.blocks.BlockView = joint.dia.ElementView.extend(_.extend({}, joint.shapes.basic.PortsViewInterface, {
+  renderPorts: function () {
+    
+    var $extPorts = this.$('.extPorts').empty()
+    var $outPorts = this.$('.outPorts').empty()
+    
+    var portTemplate = _.template(this.model.portMarkup)
+
+    _.each(_.filter(this.model.ports, function (p) {
+      return p.type === 'ext'
+    }), function (port, index) {
+
+      var $port = $extPorts.filter('.' + port.id + 'Port')
+      $port.append(V(portTemplate({
+        id: index,
+        port: port
+      })).node)
+    })
+
+    _.each(_.filter(this.model.ports, function (p) {
+      return p.type === 'out'
+    }), function (port, index) {
+
+      $outPorts.append(V(portTemplate({
+        id: index,
+        port: port
+      })).node)
+    })
+  },
+
   pointerclick: function (evt, x, y) {
     if ($(evt.target).parent().is('.blocks-nodes-text')) {
       var index = $(evt.target).index()
