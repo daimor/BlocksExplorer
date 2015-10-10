@@ -85,12 +85,17 @@ MapViewer.prototype.loadMap = function (data) {
       var colors = self.colors[globalName] || [255, 255, 255]
       if (colors !== null) {
         var context = canvas.getContext('2d')
-        $.each(glob.blocks, function (j, block) {
+        $.each(glob.blocks, function (j, blockInfo) {
+          var block = blockInfo[0]
+          var fill = Math.max(Math.ceil(blockInfo[1] / 10) , 2) / 10
           var x = block % cols
           x = x === 0 ? cols : x
           var y = Math.ceil(block / cols)
-          context.fillStyle = '#' + rgbToHex(colors[0], colors[1], colors[2])
+          context.fillStyle = 'rgba( ' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ', 0.5)'
           context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
+
+          context.fillStyle = '#' + rgbToHex(colors[0], colors[1], colors[2])
+          context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize * fill)
         })
       }
     })

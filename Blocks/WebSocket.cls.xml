@@ -41,7 +41,7 @@
                         quit:data=""
                         if $listget(data)=1,$i(countData) {
                             if $p(event,"_")="blocks" {
-                                set $listbuild(parent,block,global)=$listget(data,2)
+                                set $listbuild(parent,block,global,fill)=$listget(data,2)
                                 if $p(event,"_",2)="tree" {
                                     if '$data(blocksData(parent)) {
                                         set blocksData(parent)={"block": parent, "child": []}
@@ -53,7 +53,7 @@
                                         set blocksData(global)={"global": global, "blocks": []}
                                         do response.data.$push(blocksData(global))
                                     }
-                                    do blocksData(global).blocks.$push(block)
+                                    do blocksData(global).blocks.$push([block,fill])
                                 }
                             }
                         } elseif $listget(data)=0 {
@@ -148,15 +148,24 @@
 
 <Method name="ReadBlocks">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>aAsTree:%Boolean=0,aBlockId:%Integer=3,aGlobal:%String="",aHasLong=0,aCount</FormalSpec>
+<FormalSpec>aAsTree:%Boolean=0,aBlockId:%Integer=3,aParentBlock="",aGlobal:%String="",aHasLong=0,aCount</FormalSpec>
 <Implementation><![CDATA[
+#define toInt(%bytes) ($a(%bytes,1)+($a(%bytes,2)*256)+($a(%bytes,3)*65536)+($a(%bytes,4)*16777216))
+
     new $namespace
     znspace "%SYS"
     quit:aBlockId=0 0
+    
+    set blockSize=8192
 
     #dim error As %Exception.AbstractException = ""
     try {
         View aBlockId
+        if aParentBlock'="" {
+            set offset=$view(0,0,-4)
+            set offset=$$$toInt(offset)+28
+            do add(aParentBlock,aBlockId,aGlobal,offset)
+        }
         set blockType=$view($Zutil(40,32,1),0,1)
         set nodes=0
         if blockType=8 {
@@ -171,7 +180,7 @@
                         set blocks=$piece(X,",",4,*)
                         for i=1:1:cnt {
                             set nextBlock=$piece(X,",",3+i)
-                            do add(nextBlock,aGlobal,8192)
+                            do add(aBlockId,nextBlock,aGlobal,blockSize)
                         }
                     }
                 }
@@ -187,24 +196,23 @@
                     set haslong=1
                 }
                 set nodes($increment(nodes))=$listbuild(nextBlock,aGlobal,haslong)
-                set offset=$$toInt($view(0,0,-4))
-                do add(nextBlock,aGlobal,offset)
             }
         }
         
         for i=1:1:nodes {
-            do ..ReadBlocks(aAsTree,$listget(nodes(i)),$listget(nodes(i),2),$listget(nodes(i),3),.aCount)
+            do ..ReadBlocks(aAsTree,$listget(nodes(i)),aBlockId,$listget(nodes(i),2),$listget(nodes(i),3),.aCount)
         }
     } catch error {
-    }    
+        
+    }   
+    #; finally 
+    
+    if $isobject(error) Throw error
         
     quit $$$OK
-toInt(bytes)
-    
-    quit bytes
-add(blockId,global,fill)
-    set data=$listbuild(aBlockId,blockId)
-    if 'aAsTree set data=data_$listbuild(global,fill)
+add(parentBlock,blockId,global,offset)
+    set data=$listbuild(parentBlock,blockId)
+    if 'aAsTree set data=data_$listbuild(global,$j(offset/blockSize*100,0,0))
     do %ISCIPQ.Put($listbuild(1,data))
 ]]></Implementation>
 </Method>
