@@ -75,29 +75,35 @@ MapViewer.prototype.loadMap = function (data) {
     $.each(data, function (i, glob) {
       var globalName = '^' + glob.global
       var legend = self.legend[globalName]
-      if (legend) {
-        var count = parseInt(legend.attr('data-count')) || 0
-        count += glob.blocks.length
-        legend.attr('data-count', count)
-        legend.css('order', count)
+      if (!legend) {
+        return
       }
-      var canvas = self.canvases[globalName] || self.canvas
       var colors = self.colors[globalName] || [255, 255, 255]
-      if (colors !== null) {
-        var context = canvas.getContext('2d')
-        $.each(glob.blocks, function (j, blockInfo) {
-          var block = blockInfo[0]
-          var fill = Math.max(Math.ceil(blockInfo[1] / 10) , 2) / 10
-          var x = block % cols
-          x = x === 0 ? cols : x
-          var y = Math.ceil(block / cols)
-          context.fillStyle = 'rgba( ' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ', 0.5)'
-          context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
-
-          context.fillStyle = '#' + rgbToHex(colors[0], colors[1], colors[2])
-          context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize * fill)
-        })
+      if (!colors) {
+        return
       }
+      var count = parseInt(legend.attr('data-count')) || 0
+      var globalFill = parseInt(legend.attr('data-fill')) || 0
+      count += glob.blocks.length
+      legend.attr('data-count', count)
+      legend.css('order', count)
+      var canvas = self.canvases[globalName] || self.canvas
+      var context = canvas.getContext('2d')
+      $.each(glob.blocks, function (j, blockInfo) {
+        var block = blockInfo[0]
+        globalFill += parseInt(blockInfo[1])
+        var fill = Math.max(Math.ceil(parseInt(blockInfo[1]) / 10), 2) / 10
+        var x = block % cols
+        x = x === 0 ? cols : x
+        var y = Math.ceil(block / cols)
+        context.fillStyle = 'rgba( ' + colors[0] + ', ' + colors[1] + ', ' + colors[2] + ', 0.5)'
+        context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize)
+
+        context.fillStyle = '#' + rgbToHex(colors[0], colors[1], colors[2])
+        context.fillRect((x - 1) * self.cellSize, (y - 1) * self.cellSize, self.cellSize, self.cellSize * fill)
+      })
+      globalFill = Math.ceil(globalFill / (glob.blocks.length + 1))
+      legend.attr('data-fill', globalFill)
     })
   } catch (ex) {
 
@@ -201,6 +207,8 @@ MapViewer.prototype.initColors = function (globals) {
       // context.fillStyle = '#' + rgbToHex(c_red, c_green, c_blue)
     self.legend[globalName] = $('<li>')
       .text(globalName)
+      .attr('data-count', 0)
+      .attr('data-fill', 0)
       .prepend(
         $('<span>')
         .addClass('legend')

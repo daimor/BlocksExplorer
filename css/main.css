@@ -185,6 +185,25 @@ svg text.blocks-nodes-text tspan:hover {
   align-items: flex-start;
   border-right: 2px solid beige;
   margin-right: 10px;
+  margin-top: 20px;
+}
+
+.mapWrapper .legendWrapper .header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 250px;
+  line-height: 20px;
+  height: 20px;
+  background-color: white;
+  padding: 0 10px;
+  box-sizing: border-box;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.mapWrapper .legendWrapper .header>span:last-child {
+  float: right;
 }
 
 .mapWrapper .mapLegend {
@@ -238,13 +257,13 @@ ul.mapLegend>li>span.legend {
 }
 
 .mapLegend li::before {
-  content: attr(data-count);
+  content: attr(data-count) ' / ' attr(data-fill) '%';
   float: right;
   margin-left: 5px;
 }
 
 .mapWrapper #map {
-  width: 100%;
+  width: calc(100% - 250px);
   overflow-y: auto;
   position: relative;
   margin-bottom: 10px;
