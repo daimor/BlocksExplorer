@@ -51,8 +51,6 @@ BlocksViewer.prototype.loadTree = function (data) {
     var parent = (!parentBlock) ? null : self.blocks[parentBlock] || addBlock(parentBlock, null)
 
     var block = new joint.shapes.basic.Circle({
-      // width: 50,
-      // height: 50,
       attrs: {
         text: {
           text: blockId
@@ -116,20 +114,20 @@ BlocksViewer.prototype.add = function (blockId, blockData) {
     self.graph.addCell(link)
   }
 
-  // var leftBlock = this.blocksLeft[blockId]
-  // if (leftBlock) {
-  //   var link = new joint.shapes.blocks.Link({
-  //     source: {
-  //       id: this.blocks[leftBlock],
-  //       port: 'right'
-  //     },
-  //     target: {
-  //       id: block.id,
-  //       port: 'left'
-  //     }
-  //   })
-  //   self.graph.addCell(link)
-  // }
+  var leftBlock = this.blocksLeft[blockId]
+  if (leftBlock) {
+    var link = new joint.shapes.blocks.Link({
+      source: {
+        id: this.blocks[leftBlock],
+        port: 'right'
+      },
+      target: {
+        id: block.id,
+        port: 'left'
+      }
+    })
+    self.graph.addCell(link)
+  }
 
   if (blockData.link && blockData.link > 0) {
     self.blocksLeft[blockData.link] = blockId
@@ -143,13 +141,54 @@ BlocksViewer.prototype.add = function (blockId, blockData) {
 }
 
 BlocksViewer.prototype.layout = function (options) {
-  joint.layout.DirectedGraph.layout(this.graph, _.extend({
-    setLinkVertices: false,
-    nodeSep: 100,
-    rankSep: 100,
-    edgeSep: 20,
-    rankDir: 'LR'
-  }, options))
+  var rankSep = 60
+  var nodeSep = 40
+  var self = this
+  options = options || {}
+
+  if (!options.parent) {
+    return
+  }
+
+  var parentBlock = this.graph.getCell(options.parent)
+  var outPorts = parentBlock.get('outPorts')
+  var links = this.graph.getConnectedLinks(parentBlock, {
+    outbound: true
+  })
+  var elements = {},
+    count = 0,
+    fullHeight = 0
+  _.each(links, function (link, i) {
+    if (link.get('target').port === 'up') {
+      var child = self.graph.getCell(link.get('target').id)
+      fullHeight += child.getBBox().height
+      count += 1
+      var pos = outPorts.indexOf(link.get('source').port)
+      elements[pos] = child
+    }
+  })
+  fullHeight += (count - 1) * nodeSep
+
+  var left = parentBlock.getBBox().x + parentBlock.getBBox().width + rankSep
+  var top = parentBlock.getBBox().y - (fullHeight - parentBlock.getBBox().height) / 2
+
+  _.each(elements, function (block, i) {
+    block.set('position', {
+      x: left,
+      y: top
+    })
+    top += block.getBBox().height
+    top += nodeSep
+  })
+
+  // return
+  // joint.layout.DirectedGraph.layout(this.graph, _.extend({
+  //   setLinkVertices: false,
+  //   nodeSep: 100,
+  //   rankSep: 100,
+  //   edgeSep: 20,
+  //   rankDir: 'LR'
+  // }, options))
 }
 
 BlocksViewer.prototype.init = function () {
@@ -164,7 +203,7 @@ BlocksViewer.prototype.init = function () {
   this.paper = new joint.dia.Paper({
     width: this.container.outerWidth(),
     height: this.container.outerHeight(),
-    gridSize: 20,
+    gridSize: 10,
     perpendicularLinks: true,
     model: this.graph,
     elementView: joint.shapes.blocks.BlockView
@@ -172,7 +211,9 @@ BlocksViewer.prototype.init = function () {
 
   this.graph.on('add', function (cell) {
     if (cell.isLink()) {
-      self.layout()
+      self.layout({
+        parent: cell.get('source').id
+      })
       var block = self.graph.getCell(cell.get('target').id)
       var bbox = block.getBBox()
       self.paperScroller.center(bbox.x + (bbox.width / 2), bbox.y)

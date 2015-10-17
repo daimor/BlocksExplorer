@@ -111,7 +111,8 @@ joint.shapes.blocks.Block = joint.shapes.devs.Model.extend(_.extend({}, joint.sh
       text: [
         'Type: ' + this.blockData.type + '      ' +
         this.blockData.typename,
-        'Link: ' + (this.blockData.link || 0)
+        'Link: ' + (this.blockData.link || 0),
+        'Offset: ' + (this.blockData.offset || 0)
       ]
     }]
 
@@ -120,7 +121,7 @@ joint.shapes.blocks.Block = joint.shapes.devs.Model.extend(_.extend({}, joint.sh
       text: []
     }
     var outPorts = []
-    _.each(this.blockData.nodes, function (node) {
+    _.each(this.blockData.nodes, function (node, i) {
       var text = (nodesRect.text.length + 1) + ') ' + node.print
       if (node.blockId) {
         text += ' - ' + node.blockId
@@ -292,10 +293,10 @@ joint.shapes.blocks.Link = joint.dia.Link.extend({
     smooth: true,
     attrs: {
       '.connection': {
-        'stroke-width': 2
+        'stroke-width': 1
       },
       '.marker-target': {
-        d: 'M10,0L0,5L10,10L8,5z',
+        d: 'M7,0L0,4L7,7L5,4z',
         fill: 'black'
       }
     },
@@ -349,3 +350,4 @@ joint.shapes.blocks.BlockView = joint.dia.ElementView.extend(_.extend({}, joint.
 if (typeof exports === 'object') {
   module.exports = joint.shapes.blocks
 }
+
