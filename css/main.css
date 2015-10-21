@@ -267,6 +267,7 @@ ul.mapLegend>li>span.legend {
   overflow-y: auto;
   position: relative;
   margin-bottom: 10px;
+  margin-right: 10px;
 }
 
 #map .mask {

@@ -16,11 +16,17 @@
   <input type='checkbox' id='viewType' />
   <div class="mapWrapper">
     <div>
-      <div class='mapLegend'>
+      <div class='legendWrapper'>
+        <ul class='mapLegend'>
+        </ul>
+        <div class='header'>
+          <span>GlobalName</span>
+          <span>blocks count / fill</span>
+        </div>
       </div>
       <div id='map'>
+        <div class="mask"></div>
         <canvas>
-        </canvas>
       </div>
     </div>
   </div>
@@ -46,11 +52,14 @@
         <label for='viewType'></label>
       </span>
     </div>
+    <div class='blockInfo item'>
+    </div>
   </div>
   <script src="js/joint.all.min.js"></script>
   <script src="js/joint.shapes.blocks.js"></script>
   <script src="js/blocksViewer.js"></script>
   <script src="js/mapViewer.js"></script>
+  <script src="js/wsEventDispatcher.js"></script>
   <script src="js/main.js"></script>
 </body>
 

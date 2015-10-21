@@ -180,37 +180,123 @@ svg text.blocks-nodes-text tspan:hover {
   width: 100%;
 }
 
+.mapWrapper .legendWrapper {
+  overflow: auto;
+  width: 250px;
+  display: flex;
+  padding-bottom: 10px;
+  align-items: flex-start;
+  border-right: 2px solid beige;
+  margin-right: 10px;
+  margin-top: 20px;
+}
+
+.mapWrapper .legendWrapper .header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 250px;
+  line-height: 20px;
+  height: 20px;
+  background-color: white;
+  padding: 0 10px;
+  box-sizing: border-box;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.mapWrapper .legendWrapper .header>span:last-child {
+  float: right;
+}
+
 .mapWrapper .mapLegend {
   width: 250px;
-  border-right: 2px solid beige;
   overflow: auto;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  float: left;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap-reverse;
+  min-height: -webkit-min-content;
+  min-height: -moz-min-content;
+  min-height: min-content;
+  display: flex;
+  padding-right: 10px;
+  padding-left: 10px;
+  box-sizing: border-box;
+  align-items: flex-end;
 }
 
-.mapWrapper #map {
-  width: 100%;
-  overflow-y: auto;
-}
-
-.mapWrapper #map canvas {
-  width: 100%;
-}
-
-.mapLegend div {
+ul.mapLegend>li {
   font-size: 12px;
-  padding-left: 20px;
-  width: 100%;
+  font-family: monospace;
   position: relative;
+  list-style: none;
+  cursor: pointer;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  width: 100%;
+  overflow: hidden;
 }
 
-.mapLegend span {
+ul.mapLegend>li:hover {
+  background-color: #eee;
+}
+
+ul.mapLegend>li.Active {
+  background-color: #ddf;
+}
+
+ul.mapLegend>li>span.legend {
   width: 10px;
   height: 10px;
   display: block;
   float: left;
   margin-right: 5px;
+  margin-left: 0px;
+  margin-top: 3px;
+}
+
+.mapLegend li::before {
+  content: attr(data-count) ' / ' attr(data-fill) '%';
+  float: right;
+  margin-left: 5px;
+}
+
+.mapWrapper #map {
+  width: calc(100% - 250px);
+  overflow-y: auto;
+  position: relative;
+  margin-bottom: 10px;
+  margin-right: 10px;
+}
+
+#map .mask {
+  background-color: rgba(255, 255, 255, .8);
   position: absolute;
   top: 0;
-  left: 5px;
+  display: none;
+}
+
+#map .mask+canvas {
+  z-index: 2;
+}
+
+.mapWrapper #map canvas {
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+canvas.Active {
+  z-index: 1;
+}
+
+canvas.Active~.mask {
+  display: block !important;
 }
 
 .icon {
