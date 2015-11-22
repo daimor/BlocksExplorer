@@ -32,7 +32,28 @@
     }
     set xdata = ##class(%Dictionary.XDataDefinition).%OpenId(..%ClassName(1)_"||"_tName)
     if $isobject(xdata) {
-        quit xdata.Data.OutputToDevice()
+        set status=##class(%XML.TextReader).ParseStream(xdata.Data, .textreader)
+        set isBase64=xdata.Description["*base64*"
+        if $isobject(textreader) {
+            set data=""
+            while textreader.Read() { 
+                if (textreader.NodeType="chars") { 
+                    if isBase64 {
+                        set data=data_textreader.Value
+                        set data=$translate(data,$char(13,10))
+                        set data4Decode=$extract(data,1,$length(data)\4*4)
+                        write $system.Encryption.Base64Decode(data4Decode)
+                        set data=$extract(data,$length(data4Decode)+1,*)
+                    } else {
+                        write textreader.Value
+                    }
+                } 
+            }
+            write $system.Encryption.Base64Decode(data)
+            quit $$$OK
+        } else {
+            quit xdata.Data.OutputToDevice()
+        }
     }
     
     set tName = %request.GetCgiEnv("SCRIPT_FILENAME")

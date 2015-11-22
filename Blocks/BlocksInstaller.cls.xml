@@ -43,6 +43,9 @@ This method is invoked when a class is compiled.</Description>
         write !, "Creating WEB application """_..#CSPAPP_"""..."
         $$$ThrowOnError(##class(Security.Applications).Create(..#CSPAPP, .cspProperties))
         write !, "WEB application """_..#CSPAPP_""" created."
+        if ##class(%Studio.General).GetWebServerPort(,,,.url) {
+            write !, "You can now open it with a link: "_url_$p(..#CSPAPP,"/",2,*)_"/"
+        }
     } else {
         write !, "WEB application """_..#CSPAPP_""" already exists, so it is ready to use."
     }
