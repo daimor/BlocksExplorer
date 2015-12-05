@@ -11,7 +11,7 @@ gulp.task('default', ['build'])
 
 gulp.task('build', ['xml'])
 
-gulp.task('clean', function() {
+gulp.task('clean', function () {
   return gulp.src([
       './build/'
     ], {
@@ -20,7 +20,7 @@ gulp.task('clean', function() {
     .pipe(clean())
 })
 
-gulp.task('html', ['clean'], function() {
+gulp.task('html', ['clean'], function () {
   return gulp.src('index.html')
     .pipe(htmlReplace({
       js: 'js/app.min.js',
@@ -29,7 +29,7 @@ gulp.task('html', ['clean'], function() {
     .pipe(gulp.dest('./build/'))
 })
 
-gulp.task('js', ['clean'], function() {
+gulp.task('js', ['clean'], function () {
   return gulp.src([
       'js/joint.all.min.js',
       'js/joint.shapes.blocks.js',
@@ -45,7 +45,7 @@ gulp.task('js', ['clean'], function() {
     .pipe(gulp.dest('./build/js/'))
 })
 
-gulp.task('css', ['clean'], function() {
+gulp.task('css', ['clean'], function () {
   return gulp.src([
       'css/joint.all.min.css',
       'css/main.css'
@@ -54,17 +54,13 @@ gulp.task('css', ['clean'], function() {
     .pipe(gulp.dest('./build/css/'))
 })
 
-
-gulp.task('xml', ['clean', 'css', 'js', 'html'], function() {
+gulp.task('xml', ['clean', 'css', 'js', 'html'], function () {
   return gulp.src([
       './BlocksExplorer.prj.xml',
       './Blocks/**/*.xml'
     ])
-    .pipe(cacheBuilder('CacheBlocksExplorer.xml', {
-      cspApplication: ''
-    }))
     .pipe(cheerio({
-      run: function($, file) {
+      run: function ($, file) {
         var staticFiles = [{
           name: 'index.html',
           file: './build/index.html'
@@ -76,7 +72,7 @@ gulp.task('xml', ['clean', 'css', 'js', 'html'], function() {
           file: './build/css/styles.min.css'
         }]
 
-        staticFiles.map(function(fileInfo) {
+        staticFiles.map(function (fileInfo) {
           try {
             $('Class[name="Blocks.Router"]').append($('<XData>')
               .attr('name', fileInfo.name.replace(/\./g, '_'))
@@ -92,6 +88,50 @@ gulp.task('xml', ['clean', 'css', 'js', 'html'], function() {
           }
         })
 
+      },
+      parserOptions: {
+        xmlMode: true,
+        prettify: true
+      }
+    }))
+    .pipe(gulp.dest('./build/src/'))
+})
+
+gulp.task('project', ['clean', 'xml', 'html', 'js', 'css'], function () {
+  return gulp.src([
+      './build/src/BlocksExplorer.prj.xml',
+      './build/src/**/*.xml',
+      '!./build/src/**/*Installer.cls.xml'
+    ])
+    .pipe(cacheBuilder('CacheBlocksExplorerProject.xml'))
+    .pipe(gulp.dest('./build/'))
+})
+
+gulp.task('standalone', function () {
+  return gulp.src([
+      './build/src/StandaloneInstaller.cls.xml'
+    ])
+    .pipe(cheerio({
+      run: function ($, file) {
+        var projectFile = './build/CacheBlocksExplorerProject.xml'
+        var projectData = (fs.readFileSync(projectFile, {
+          encoding: 'base64'
+        })).replace(/[\r\n]/g, '')
+
+        try {
+          $('Class[name="Blocks.StandaloneInstaller"]')
+            .append($('<XData>')
+              .attr('name', 'Data')
+              .append('<Description>*base64*</Description>')
+              .append(
+                $('<Data><![CDATA[ <data>' + projectData + '</data> ]]> </Data>')
+              )
+            )
+          $('Class[name="Blocks.StandaloneInstaller"]>Parameter[name="AUTOINSTALL"]>Default')
+            .text('1')
+        } catch (err) {
+          console.log(err)
+        }
       },
       parserOptions: {
         xmlMode: true,

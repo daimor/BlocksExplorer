@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25">
+<Class name="Blocks.StandaloneInstaller">
+<Super>%Projection.AbstractProjection</Super>
+<TimeCreated>63891,81356.915211</TimeCreated>
+
+<Projection name="Reference">
+<Type>Blocks.StandaloneInstaller</Type>
+</Projection>
+
+<Parameter name="CSPAPP">
+<Type>%String</Type>
+<Default>/blocks</Default>
+</Parameter>
+
+<Parameter name="CSPAPPDIR">
+<Type>%String</Type>
+<Expression>##class(%File).SubDirectoryName($system.Util.InstallDirectory(), "csp"_$zcvt(..#CSPAPP,"l"), 1)</Expression>
+</Parameter>
+
+<Parameter name="CSPAPPDESC">
+<Type>%String</Type>
+<Default>A WEB application for Cache Blocks Explorer.</Default>
+</Parameter>
+
+<Parameter name="ROUTER">
+<Type>%String</Type>
+<Default>Blocks.Router</Default>
+</Parameter>
+
+<Parameter name="NAMESPACE">
+<Type>%String</Type>
+<Default>BLOCKS</Default>
+</Parameter>
+
+<Parameter name="DBNAME">
+<Type>%String</Type>
+<Default>BLOCKS</Default>
+</Parameter>
+
+<Parameter name="DBPATH">
+<Type>%String</Type>
+<Expression>$zu(12,$zcvt(..#DBNAME,"l"))</Expression>
+</Parameter>
+
+<Parameter name="AUTOINSTALL">
+<Type>%Boolean</Type>
+<Default>0</Default>
+</Parameter>
+
+<Method name="CreateProjection">
+<Description>
+This method is invoked when a class is compiled.</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[classname:%String,&parameters:%String,modified:%String,qstruct]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    quit:'..#AUTOINSTALL $$$OK
+    set xdata=##class(%Dictionary.XDataDefinition).%OpenId(..%ClassName(1)_"||Data",0)
+    quit:'$isobject(xdata) $$$OK
+    
+    set logFile=##class(%File).TempFilename("setupBlocksExplorer")
+    
+    job ..setup():(:::logFile):0
+    if '$test {
+        quit $$$OK
+    }
+    set child=$zchild
+    do { hang 0.1 } while $data(^$JOB(child)) 
+    
+    set fs=##class(%Stream.FileCharacter).%New()
+    set fs.Filename=logFile
+    while 'fs.AtEnd {
+        write !,fs.ReadLine()
+    }
+    if ##class(%File).Delete(logFile)
+    quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="setup">
+<Internal>1</Internal>
+<ClassMethod>1</ClassMethod>
+<CodeMode>objectgenerator</CodeMode>
+<FormalSpec><![CDATA[&pVars,pLogLevel:%Integer=3,pInstaller:%Installer.Installer,pLogger:%Installer.AbstractLogger]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    do %code.WriteLine($c(9)_"if '$data(pVars(""FORCE"")) set pVars(""FORCE"")=$g(%qstruct(""force""))")
+    do %code.WriteLine($c(9)_"set pVars(""CURRENTCLASS"")="""_%classname_"""")
+    do %code.WriteLine($c(9)_"set pVars(""CURRENTNS"")=$namespace")
+    do %code.WriteLine($c(9)_"if '$data(pVars(""NAMESPACE"")) set pVars(""NAMESPACE"")=..#NAMESPACE")
+    do %code.WriteLine($c(9)_"if '$data(pVars(""DBNAME"")) set pVars(""DBNAME"")=..#DBNAME")
+    do %code.WriteLine($c(9)_"if '$data(pVars(""DBPATH"")) set pVars(""DBPATH"")=..#DBPATH")
+    do %code.WriteLine($c(9)_"if '$data(pVars(""CSPAPP"")) set pVars(""CSPAPP"")=..#CSPAPP")
+    do %code.WriteLine($c(9)_"if '$data(pVars(""CSPAPPDIR"")) set pVars(""CSPAPPDIR"")=..#CSPAPPDIR")
+    do %code.WriteLine($c(9)_"if '$data(pVars(""CSPAPPDESC"")) set pVars(""CSPAPPDESC"")=..#CSPAPPDESC")
+    do %code.WriteLine($c(9)_"if '$data(pVars(""CSPAPPROUTER"")) set pVars(""CSPAPPROUTER"")=..#ROUTER")
+    quit ##class(%Installer.Manifest).%Generate(%compiledclass, %code, "setup")
+]]></Implementation>
+</Method>
+
+<XData name="setup">
+<XMLNamespace>INSTALLER</XMLNamespace>
+<Data><![CDATA[
+<Manifest>
+<Invoke Class="${CURRENTCLASS}" Method="PrepareData" CheckStatus="false" Return="APPDATA">
+</Invoke>
+<Namespace Name="${NAMESPACE}" Ensemble="false" Create="overwrite">
+<Configuration>
+<Database Name="${DBNAME}" Dir="${DBPATH}" Create="overwrite"/>
+<CSPApplication Url="${CSPAPP}" Directory="${CSPAPPDIR}" Description="${CSPAPPDESC}"/>
+<Import File="${APPDATA}" Flags="cdfk-u" IgnoreErrors="true" Recurse="true"/>
+</Configuration>
+</Namespace>
+<Namespace Name="${CURRENTNS}">
+<Invoke Class="${CURRENTCLASS}" Method="SetDispatchClass" CheckStatus="true">
+<Arg Value="${CSPAPP}"/>
+<Arg Value="${CSPAPPROUTER}"/>
+</Invoke>
+</Namespace>
+</Manifest>
+]]></Data>
+</XData>
+
+<Method name="PrepareData">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    set tmpFile=##class(%File).TempFilename("xml")
+    set tmpFileFS=##class(%Stream.FileBinary).%New()
+    set tmpFileFS.Filename=tmpFile
+    set xdata=##class(%Dictionary.XDataDefinition).%OpenId(..%ClassName(1)_"||Data",0)
+    set status=##class(%XML.TextReader).ParseStream(xdata.Data, .textreader)
+    set data=""
+    while textreader.Read() { 
+        if (textreader.NodeType="chars") { 
+            set data=data_textreader.Value
+            set data=$translate(data,$char(13,10))
+            set data4Decode=$extract(data,1,$length(data)\4*4)
+            do tmpFileFS.Write($system.Encryption.Base64Decode(data4Decode))
+            set data=$extract(data,$length(data4Decode)+1,*)
+        } 
+    }
+    do tmpFileFS.Write($system.Encryption.Base64Decode(data))
+    do tmpFileFS.%Save()
+    quit tmpFile
+]]></Implementation>
+</Method>
+
+<Method name="SetDispatchClass">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pCSPName:%String="",pDispatchClass:%String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    new $namespace
+    znspace "%SYS"
+    set props("DispatchClass")=pDispatchClass
+    set props("Recurse")=1
+    d ##class(Security.Applications).Modify(pCSPName,.props)
+    quit $$$OK
+]]></Implementation>
+</Method>
+</Class>
+</Export>
