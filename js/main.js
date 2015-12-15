@@ -21,7 +21,7 @@ var App = function () {
   }
 
   var wsUrl = ((window.location.protocol == "https:") ? "wss:" : "ws:" + "//" + window.location.host)
-  wsUrl += '/blocks/Blocks.WebSocket.cls'
+  wsUrl += '/blocks/websocket'
   this.ws = new FancyWebSocket(wsUrl)
 
   this.blocksViewer = new BlocksViewer(this, this.elements.blocksViewer)

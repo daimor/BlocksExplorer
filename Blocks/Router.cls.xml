@@ -11,10 +11,18 @@
 <Route Url="/rest/dblist" Method="GET" Call="DBList"/>
 <Route Url="/rest/block/:block" Method="GET" Call="BlockInfo"/>
 <Route Url="/rest/block/:block" Method="POST" Call="BlockInfo"/>
+<Route Url="/websocket" Method="GET" Call="WebSocket"/>
 <Route Url="/((?!rest/).*)" Method="GET" Call="GetStatic"/>
 </Routes>
 ]]></Data>
 </XData>
+
+<Method name="WebSocket">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[    quit ##class(Blocks.WebSocket).Page()
+]]></Implementation>
+</Method>
 
 <Method name="GetStatic">
 <ClassMethod>1</ClassMethod>
