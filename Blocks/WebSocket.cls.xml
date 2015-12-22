@@ -4,6 +4,26 @@
 <Super>%CSP.WebSocket</Super>
 <TimeCreated>63812,72249.000955</TimeCreated>
 
+<Property name="WorkIPQ">
+<Type>%SYSTEM.WorkMgrIPQ</Type>
+</Property>
+
+<Property name="Event">
+<Type>%String</Type>
+</Property>
+
+<Method name="WorkIPQGet">
+<ReturnType>%SYSTEM.WorkMgrIPQ</ReturnType>
+<Implementation><![CDATA[
+    if '$isobject($get(i%WorkIPQ)) {
+        Set ^||%ISC.WorkQueueMgr("ForceJobs")=2
+        Set i%WorkIPQ=$system.WorkMgrIPQ.Initialize("/multicompile=1",.sc)
+        $$$ThrowOnError(sc)
+    }
+    quit i%WorkIPQ
+]]></Implementation>
+</Method>
+
 <Method name="OnPreServer">
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[    Quit $$$OK
@@ -31,94 +51,104 @@
                 set timeouted = 1
             }
             if timeouted {
-                if $isobject(queue),event'="" {
-                    set atEnd=0,nextRead=0
-                    set response={"event": event, "data": []}
-                    kill blocksData
-                    set countData=0
-                    while ('atEnd)&&('nextRead) {
-                        Set data=queue.Get(0)
-                        quit:data=""
-                        if $listget(data)=1,$i(countData) {
-                            if $p(event,"_")="blocks" {
-                                set $listbuild(parent,block,global,fill)=$listget(data,2)
-                                if $p(event,"_",2)="tree" {
-                                    if '$data(blocksData(parent)) {
-                                        set blocksData(parent)={"block": parent, "child": []}
-                                        do response.data.$push(blocksData(parent))
-                                    }
-                                    do blocksData(parent).child.$push(block)
-                                } else {
-                                    if '$data(blocksData(global)) {
-                                        set blocksData(global)={"global": global, "blocks": []}
-                                        do response.data.$push(blocksData(global))
-                                    }
-                                    do blocksData(global).blocks.$push([block,fill])
-                                }
-                            }
-                        } elseif $listget(data)=0 {
-                            Set sc=queue.Decode(data,,.atend)
-                            set nextRead=1
-                            $$$ThrowOnError(sc)
-                        }
-                        set nextRead=nextRead||(countData>=5000)
-                    }
-                    if response.data.$size() > 0 {
-                        do ..Write(response.$toJSON())
-                    }
-                    if atEnd {
-                        set queue=""
-                    }
-                }
-                quit
-            }
-            set request=##class(%Object).$fromJSON(data)
-            set event=request.event
-            if $piece(event,"_")="blocks" {
-                set asTree=($piece(event,"_",2)="tree")
-                
-                #; clear previous queue if it still exists
-                if $isobject(queue) {
-                    do queue.Clear(0)
-                }
-                Set ^||%ISC.WorkQueueMgr("ForceJobs")=2
-                Set queue=$system.WorkMgrIPQ.Initialize("/multicompile=1",.sc)
-                $$$ThrowOnError(sc)
-                set worker="##class(Blocks.WebSocket).GetBlocks"
-                Set sc=queue.Queue(worker,request.data.directory,asTree) 
-                if $$$ISERR(sc) {
-                    set queue=""
-                    set event=""
-                    $$$ThrowOnError(sc)
-                }
-            } elseif event="ping" {
-                do ..Write({
-                    "event": "ping",
-                    "data": "pong"
-                }.$toJSON())
-            } elseif event="exit" {
-                do ..Write({
-                    "event": "exit",
-                    "data": "OK"
-                }.$toJSON())
-                set quit=1
-                quit
+                set sc = ..SendBlocksData()
             } else {
-                do ..Write({
-                    "event": "error",
-                    "data": ("Unrecognized event: "_event)
-                }.$toJSON())
+                set sc = ..Action(data)
             }
+            $$$ThrowOnError(sc)
         } catch exception {
-            set queue=""
-            do ..Write({
-                "event": "error",
-                "data": exception.DisplayString()
-            }.$toJSON())
+            do ..Write("error", exception.DisplayString())
+            set quit=1
         }
     }
     Set status=..EndServer()
     Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="SendBlocksData">
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    set st = $$$OK
+    
+    quit:..Event="" $$$OK
+    
+    set atEnd=0,nextRead=0
+    set responseData = ##class(%ListOfDataTypes).%New()
+    kill blocksData
+    set countData=0
+    while ('atEnd)&&('nextRead) {
+        Set data=..WorkIPQ.Get(0)
+        quit:data=""
+        if $listget(data)=1,$i(countData) {
+            if $p(..Event,"_")="blocks" {
+                set $listbuild(parent,block,global,fill)=$listget(data,2)
+                if $p(..Event,"_",2)="tree" {
+                    if '$data(blocksData(parent)) {
+                        set blocksData(parent)=##class(%ZEN.proxyObject).%New()
+                        set blocksData(parent).block = parent
+                        set blocksData(parent).child = ##class(%ListOfDataTypes).%New()
+                        do responseData.Insert(blocksData(parent))
+                    }
+                    do blocksData(parent).child.Insert(block)
+                } else {
+                    if '$data(blocksData(global)) {
+                        set blocksData(global)=##class(%ZEN.proxyObject).%New()
+                        set blocksData(global).global = global
+                        set blocksData(global).blocks = ##class(%ListOfDataTypes).%New()
+                        do responseData.Insert(blocksData(global))
+                    }
+                    set blockInfo = ##class(%ListOfDataTypes).%New()
+                    do blockInfo.Insert(block)
+                    do blockInfo.Insert(fill)
+                    do blocksData(global).blocks.Insert(blockInfo)
+                    kill blockInfo
+                }
+            }
+        } elseif $listget(data)=0 {
+            Set sc=..WorkIPQ.Decode(data,,.atend)
+            set nextRead=1
+            $$$ThrowOnError(sc)
+        }
+        set nextRead=nextRead||(countData>=5000)
+    }
+    if responseData.Size > 0 {
+        do ..Write(..Event, responseData)
+    }
+    if atEnd {
+        set ..Event = ""
+    }
+    quit st
+]]></Implementation>
+</Method>
+
+<Method name="Action">
+<FormalSpec>obj:%ZEN.proxyObject</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    set st = $$$OK
+    #dim exception As %Exception.AbstractException
+    try {
+        set action = obj.event
+        set data = ##class(%ListOfDataTypes).%New()
+        if action="ping" {
+            set sc=..Write(action, "pong")
+        } elseif $p(action,"_")="blocks" {
+            set asTree=($piece(action,"_",2)="tree")
+            
+            #; clear previous queue
+            do ..WorkIPQ.Clear(0)
+
+            set worker="##class(Blocks.WebSocket).GetBlocks"
+            Set sc=..WorkIPQ.Queue(worker,obj.data.directory,asTree) 
+            $$$ThrowOnError(sc)
+            set ..Event = action
+        }
+        
+    } catch exception {
+        set st = exception.AsStatus()
+    }
+    quit st
 ]]></Implementation>
 </Method>
 
@@ -214,6 +244,80 @@ add(parentBlock,blockId,global,offset)
     set data=$listbuild(parentBlock,blockId)
     if 'aAsTree set data=data_$listbuild(global,$j(offset/blockSize*100,0,0))
     do %ISCIPQ.Put($listbuild(1,data))
+]]></Implementation>
+</Method>
+
+<Method name="Read">
+<Description>
+Reads up to len characters from the client.
+If the call is successful the status (sc) will be returned as $$$OK, otherwise an error code of $$$CSPWebSocketTimeout 
+indicates a timeout and $$$CSPWebSocketClosed indicates that the client has terminated the WebSocket.</Description>
+<FormalSpec><![CDATA[&len:%Integer=32656,&sc:%Status,timeout:%Integer=86400]]></FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    Set json = ##super(len, .sc, timeout)
+    Do:$$$ISERR(sc) ..EndServer()
+    Set st = ##class(%ZEN.Auxiliary.jsonProvider).%ConvertJSONToObject(json,,.obj,1)
+    Do:$$$ISERR(st) ..EndServer()
+    Quit obj
+]]></Implementation>
+</Method>
+
+<Method name="Write">
+<FormalSpec>eventName:%String="",data:%String</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    if '$d(data) {
+        quit ##super(eventName)
+    }
+    set response = ##class(%ZEN.proxyObject).%New()
+    set response.event = eventName
+    set response.data = data
+    
+    Quit ##super(..OutputToStr(response,"%ToJSON"))
+]]></Implementation>
+</Method>
+
+<Method name="OutputToStr">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>obj,method,args...</FormalSpec>
+<ProcedureBlock>0</ProcedureBlock>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    Set str=""
+    //Redirect IO to the current routine - makes use of the labels defined below
+    Use $io::("^"_$ZNAME)
+    
+    //Enable redirection
+    Do ##class(%Device).ReDirectIO(1)
+    
+    if $isobject(obj) {
+        Do $Method(obj,method,args...)
+    } elseif $$$comClassDefined(obj) {
+        Do $ClassMethod(obj,method,args...)
+    }
+    
+    //Disable redirection
+    Do ##class(%Device).ReDirectIO(0)
+    Quit str      
+    //Labels that allow for IO redirection
+    //Read Character - we Don't care about reading
+rchr(c)      quit
+    //Read a string - we Don't care about reading
+rstr(sz,to)  quit
+    //Write a character - call the output label
+wchr(s)      Do output($char(s))  quit
+    //Write a form feed - call the output label
+wff()        Do output($char(12))  quit
+    //Write a newline - call the output label
+wnl()        Do output($char(13,10))  quit
+    //Write a string - call the output label
+wstr(s)      Do output(s)  quit
+    //Write a tab - call the output label
+wtab(s)      Do output($char(9))  quit
+    //Output label - this is where you would handle what you actually want to Do.
+    //  in our case, we want to Write to str
+output(s)    Set str=str_s   quit
 ]]></Implementation>
 </Method>
 </Class>
