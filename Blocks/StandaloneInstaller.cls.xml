@@ -105,9 +105,9 @@ This method is invoked when a class is compiled.</Description>
 <Manifest>
 <Invoke Class="${CURRENTCLASS}" Method="PrepareData" CheckStatus="false" Return="APPDATA">
 </Invoke>
-<Namespace Name="${NAMESPACE}" Ensemble="false" Create="overwrite">
+<Namespace Name="${NAMESPACE}" Ensemble="false" Create="yes">
 <Configuration>
-<Database Name="${DBNAME}" Dir="${DBPATH}" Create="overwrite"/>
+<Database Name="${DBNAME}" Dir="${DBPATH}" Create="yes"/>
 <CSPApplication Url="${CSPAPP}" Directory="${CSPAPPDIR}" Description="${CSPAPPDESC}"/>
 <Import File="${APPDATA}" Flags="cdfk-u" IgnoreErrors="true" Recurse="true"/>
 </Configuration>

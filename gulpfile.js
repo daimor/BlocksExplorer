@@ -107,7 +107,7 @@ gulp.task('project', ['clean', 'xml', 'html', 'js', 'css'], function () {
     .pipe(gulp.dest('./build/'))
 })
 
-gulp.task('standalone', function () {
+gulp.task('standalone', ['project'], function () {
   return gulp.src([
       './build/src/StandaloneInstaller.cls.xml'
     ])

@@ -77,12 +77,13 @@
 
 <Method name="DBList">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>pBlock</FormalSpec>
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
     new $namespace
     znspace "%SYS"
-    #dim dblist As %Array = []
+
+    write "["
+    set first = 1
     
     set tStatement=##class(%SQL.Statement).%New()
     set tSC=tStatement.%PrepareClassQuery("Config.Databases","List")
@@ -101,16 +102,18 @@
         continue:$data(was($zconvert(dir,"L")))
         do add(dir,dir)
     }
-    write dblist.$toJSONFormat()
+    write "]"
     quit $$$OK
 add(name,dir)
     set db=##class(SYS.Database).%OpenId(dir)
     set blocks=db.Size*1024*1024/db.BlockSize
-    do dblist.$push({
-        "name"      : name,
-        "directory" : dir,
-        "blocks"    : blocks
-    })
+    Set tJSON = ##class(%ZEN.proxyObject).%New()
+    set tJSON.name = name
+    set tJSON.directory = dir
+    set tJSON.blocks = blocks
+    if 'first write ", "
+    set first = 0
+    do tJSON.%ToJSON()
 ]]></Implementation>
 </Method>
 
