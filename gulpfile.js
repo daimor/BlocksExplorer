@@ -5,7 +5,7 @@ var uglify = require('gulp-uglify')
 var cheerio = require('gulp-cheerio')
 var htmlReplace = require('gulp-html-replace')
 var fs = require('fs')
-var cacheBuilder = require('./gulp-cachebuild')
+var cacheBuilder = require('gulp-cachebuild')
 
 gulp.task('default', ['build'])
 
