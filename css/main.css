@@ -1,3 +1,5 @@
+@import '~jointjs/dist/joint.css';
+
 html,
 body {
   margin: 0px;
@@ -16,7 +18,6 @@ body {
 
 #header .item {
   display: inline-block;
-  float: left;
   padding-right: 15px;
   height: 20px;
 }

@@ -4,23 +4,30 @@
 <Super>%CSP.WebSocket</Super>
 <TimeCreated>63812,72249.000955</TimeCreated>
 
-<Property name="WorkIPQ">
-<Type>%SYSTEM.WorkMgrIPQ</Type>
+<Parameter name="UseSession">
+<Default>0</Default>
+</Parameter>
+
+<Property name="ResourceName">
+<Type>%String</Type>
+</Property>
+
+<Property name="ChildPID">
+<Type>%Integer</Type>
 </Property>
 
 <Property name="Event">
 <Type>%String</Type>
 </Property>
 
-<Method name="WorkIPQGet">
-<ReturnType>%SYSTEM.WorkMgrIPQ</ReturnType>
+<Method name="ResourceNameGet">
+<ReturnType>%String</ReturnType>
 <Implementation><![CDATA[
-    if '$isobject($get(i%WorkIPQ)) {
-        Set ^||%ISC.WorkQueueMgr("ForceJobs")=2
-        Set i%WorkIPQ=$system.WorkMgrIPQ.Initialize("/multicompile=1",.sc)
-        $$$ThrowOnError(sc)
-    }
-    quit i%WorkIPQ
+	set resName = "blocks" _ $job
+	if '$system.Event.Defined(resName) {
+		do $system.Event.Create(resName)
+	}
+	quit resName
 ]]></Implementation>
 </Method>
 
@@ -36,7 +43,6 @@
     Set timeout=.5
     set quit=0
     set dataGN="",event=""
-    #dim queue As %SYSTEM.WorkMgrIPQ = ""
     #dim exception As %Exception.AbstractException
     Set len=32656
     while 'quit {
@@ -69,56 +75,58 @@
 <Method name="SendBlocksData">
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
+	;do ..Write("error", "test0" _ ..Event)
     set st = $$$OK
     
     quit:..Event="" $$$OK
     
-    set atEnd=0,nextRead=0
+    set child = ..ChildPID
+    set resName = ..ResourceName 
+    
     set responseData = ##class(%ListOfDataTypes).%New()
     kill blocksData
     set countData=0
-    while ('atEnd)&&('nextRead) {
-        Set data=..WorkIPQ.Get(0)
-        quit:data=""
-        if $listget(data)=1,$i(countData) {
-            if $p(..Event,"_")="blocks" {
-                set $listbuild(parent,block,global,fill)=$listget(data,2)
-                if $p(..Event,"_",2)="tree" {
-                    if '$data(blocksData(parent)) {
-                        set blocksData(parent)=##class(%ZEN.proxyObject).%New()
-                        set blocksData(parent).block = parent
-                        set blocksData(parent).child = ##class(%ListOfDataTypes).%New()
-                        do responseData.Insert(blocksData(parent))
-                    }
-                    do blocksData(parent).child.Insert(block)
-                } else {
-                    if '$data(blocksData(global)) {
-                        set blocksData(global)=##class(%ZEN.proxyObject).%New()
-                        set blocksData(global).global = global
-                        set blocksData(global).blocks = ##class(%ListOfDataTypes).%New()
-                        do responseData.Insert(blocksData(global))
-                    }
-                    set blockInfo = ##class(%ListOfDataTypes).%New()
-                    do blockInfo.Insert(block)
-                    do blockInfo.Insert(fill)
-                    do blocksData(global).blocks.Insert(blockInfo)
-                    kill blockInfo
-                }
+    set atEnd=0
+    while 'atEnd {
+    	set $lb(sc,data)=$system.Event.WaitMsg(resName, 0)
+    	if sc<=0,'$data(^$JOB(child)) {
+    		set atEnd=1
+    		quit
+    	}
+    	continue:data=""
+        set $listbuild(parent,block,global,fill)=data
+        if $p(..Event,"_",2)="tree" {
+            if '$data(blocksData(parent)) {
+                set blocksData(parent)=##class(%ZEN.proxyObject).%New()
+                set blocksData(parent).block = parent
+                set blocksData(parent).child = ##class(%ListOfDataTypes).%New()
+                do responseData.Insert(blocksData(parent))
             }
-        } elseif $listget(data)=0 {
-            Set sc=..WorkIPQ.Decode(data,,.atend)
-            set nextRead=1
-            $$$ThrowOnError(sc)
+            do blocksData(parent).child.Insert(block)
+        } else {
+            if '$data(blocksData(global)) {
+                set blocksData(global)=##class(%ZEN.proxyObject).%New()
+                set blocksData(global).global = global
+                set blocksData(global).blocks = ##class(%ListOfDataTypes).%New()
+                do responseData.Insert(blocksData(global))
+            }
+            set blockInfo = ##class(%ListOfDataTypes).%New()
+            do blockInfo.Insert(block)
+            do blockInfo.Insert(fill)
+            do blocksData(global).blocks.Insert(blockInfo)
+            kill blockInfo
         }
-        set nextRead=nextRead||(countData>=5000)
-    }
+        quit:$i(countData)>=1000
+	}
+
     if responseData.Size > 0 {
         do ..Write(..Event, responseData)
     }
     if atEnd {
         set ..Event = ""
     }
-    quit st
+	
+    quit $$$OK
 ]]></Implementation>
 </Method>
 
@@ -134,15 +142,16 @@
         if action="ping" {
             set sc=..Write(action, "pong")
         } elseif $p(action,"_")="blocks" {
-            set asTree=($piece(action,"_",2)="tree")
-            
-            #; clear previous queue
-            do ..WorkIPQ.Clear(0)
-
-            set worker="##class(Blocks.WebSocket).GetBlocks"
-            Set sc=..WorkIPQ.Queue(worker,obj.data.directory,asTree) 
-            $$$ThrowOnError(sc)
-            set ..Event = action
+        	do ..Write("error", action)
+ //            set asTree=($piece(action,"_",2)="tree")
+ //            
+ //            do $system.Event.Clear(..ResourceName)
+ //            
+ //			job ##class(Blocks.WebSocket).GetBlocks(obj.data.directory, asTree, ..ResourceName)
+ //			set child=$zchild
+ //			set ..ChildPID = child
+ //			
+ //            set ..Event = action
         }
         
     } catch exception {
@@ -160,25 +169,31 @@
 
 <Method name="GetBlocks">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>aDirectory:%String="",aAsTree:%Boolean=0</FormalSpec>
+<FormalSpec>aDirectory:%String="",aAsTree:%Boolean=0,ResourceName:%String=""</FormalSpec>
 <Implementation><![CDATA[
+    set resName="blocks"_$zparent
     quit:aDirectory="" 0
+    
     new $namespace
     znspace "%sys"
     
     OPEN 63:"^^"_aDirectory
     
-    set tSC=..ReadBlocks(aAsTree,3,,,.count)
-    $$$ThrowOnError(tSC)
+    try {
+    	set tSC=..ReadBlocks(aAsTree, 3, "", "", 0, ResourceName)
+    } catch ex {
+    	set tSC=ex.AsSystemError()
+    }
         
     CLOSE 63
+    $$$ThrowOnError(tSC)
     quit $$$OK
 ]]></Implementation>
 </Method>
 
 <Method name="ReadBlocks">
 <ClassMethod>1</ClassMethod>
-<FormalSpec>aAsTree:%Boolean=0,aBlockId:%Integer=3,aParentBlock="",aGlobal:%String="",aHasLong=0,aCount</FormalSpec>
+<FormalSpec>aAsTree:%Boolean=0,aBlockId:%Integer=3,aParentBlock="",aGlobal:%String="",aHasLong=0,ResourceName:%String=""</FormalSpec>
 <Implementation><![CDATA[
 #define toInt(%bytes) ($a(%bytes,1)+($a(%bytes,2)*256)+($a(%bytes,3)*65536)+($a(%bytes,4)*16777216))
 
@@ -206,7 +221,6 @@
                     set gdview=$ascii(X)
                     if $listfind($listbuild(5,7,3),gdview) {
                         set cnt=$piece(X,",",2)
-                        if $increment(aCount,cnt),$increment(aCount(aGlobal),cnt)
                         set blocks=$piece(X,",",4,*)
                         for i=1:1:cnt {
                             set nextBlock=$piece(X,",",3+i)
@@ -230,7 +244,7 @@
         }
         
         for i=1:1:nodes {
-            do ..ReadBlocks(aAsTree,$listget(nodes(i)),aBlockId,$listget(nodes(i),2),$listget(nodes(i),3),.aCount)
+            do ..ReadBlocks(aAsTree, $listget(nodes(i)), aBlockId, $listget(nodes(i),2), $listget(nodes(i),3), ResourceName)
         }
     } catch error {
         
@@ -243,7 +257,7 @@
 add(parentBlock,blockId,global,offset)
     set data=$listbuild(parentBlock,blockId)
     if 'aAsTree set data=data_$listbuild(global,$j(offset/blockSize*100,0,0))
-    do %ISCIPQ.Put($listbuild(1,data))
+ 	do $system.Event.Signal(ResourceName, data)
 ]]></Implementation>
 </Method>
 

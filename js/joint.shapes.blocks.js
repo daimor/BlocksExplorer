@@ -1,16 +1,6 @@
-if (typeof exports === 'object') {
-  var joint = {
-    util: require('../src/core').util,
-    shapes: {
-      basic: require('./joint.shapes.basic')
-    },
-    dia: {
-      ElementView: require('../src/joint.dia.element').ElementView,
-      Link: require('../src/joint.dia.link').Link
-    }
-  }
-  var _ = require('lodash')
-}
+import $ from 'jquery';
+import joint from 'jointjs'
+var V = joint.V
 
 joint.shapes.blocks = {}
 
@@ -288,25 +278,25 @@ joint.shapes.blocks.Block = joint.shapes.devs.Model.extend(_.extend({}, joint.sh
 
 joint.shapes.blocks.Link = joint.dia.Link.extend({
 
-  defaults: {
-    type: 'blocks.Link',
-    smooth: true,
-    attrs: {
-      '.connection': {
-        'stroke-width': 1
-      },
-      '.marker-target': {
-        d: 'M7,0L0,4L7,7L5,4z',
-        fill: 'black'
-      }
-    },
-    router: {
-      name: 'manhattan'
-    },
-    connector: {
-      name: 'rounded'
-    }
-  }
+  // defaults: {
+  //   type: 'blocks.Link',
+  //   smooth: true,
+  //   attrs: {
+  //     '.connection': {
+  //       'stroke-width': 1
+  //     },
+  //     '.marker-target': {
+  //       d: 'M7,0L0,4L7,7L5,4z',
+  //       fill: 'black'
+  //     }
+  //   },
+  //   router: {
+  //     name: 'manhattan'
+  //   },
+  //   connector: {
+  //     name: 'rounded'
+  //   }
+  // }
 })
 
 joint.shapes.blocks.BlockView = joint.dia.ElementView.extend(_.extend({}, joint.shapes.basic.PortsViewInterface, {

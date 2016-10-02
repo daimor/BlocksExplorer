@@ -35,44 +35,48 @@ socket.bind('some_event', function(data){
 socket.send( 'some_event', {name: 'ismael', message : 'Hello world'} );
 */
 
-var FancyWebSocket = function (url) {
-  var conn = new WebSocket(url)
+export class FancyWebSocket {
+  
+  constructor(url) {
+    this.conn = new WebSocket(url)
 
-  var callbacks = {}
+    // dispatch to the right handlers
+    this.conn.onmessage = (evt) => {
+      var json = JSON.parse(evt.data)
+      this.dispatch(json.event, json.data)
+    }
 
-  this.bind = function (event_name, callback) {
-    callbacks[event_name] = callbacks[event_name] || []
-    callbacks[event_name].push(callback)
-    return this // chainable
+    this.conn.onclose = () => {
+      this.dispatch('close', null)
+    }
+    this.conn.onopen = () => {
+      this.dispatch('open', null)
+    }
+
+    this.callbacks = {}
   }
 
-  this.send = function (event_name, event_data) {
-    var payload = JSON.stringify({
-      event: event_name,
-      data: event_data
-    })
-    conn.send(payload) // <= send JSON data to socket server
-    return this
-  }
-
-  // dispatch to the right handlers
-  conn.onmessage = function (evt) {
-    var json = JSON.parse(evt.data)
-    dispatch(json.event, json.data)
-  }
-
-  conn.onclose = function () {
-    dispatch('close', null)
-  }
-  conn.onopen = function () {
-    dispatch('open', null)
-  }
-
-  var dispatch = function (event_name, message) {
-    var chain = callbacks[event_name]
+  dispatch(event_name, message) {
+    var chain = this.callbacks[event_name]
     if (typeof chain === 'undefined') return // no callbacks for this event
     for (var i = 0; i < chain.length; i++) {
       chain[i](message)
     }
   }
+
+  bind(event_name, callback) {
+    this.callbacks[event_name] = this.callbacks[event_name] || []
+    this.callbacks[event_name].push(callback)
+    return this // chainable
+  }
+
+  send(event_name, event_data) {
+    var payload = JSON.stringify({
+      event: event_name,
+      data: event_data
+    })
+    this.conn.send(payload) // <= send JSON data to socket server
+    return this
+  }
 }
+

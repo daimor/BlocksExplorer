@@ -1,3 +1,8 @@
+var $ = require('jquery');
+import {BlocksViewer} from './blocksViewer';
+import {FancyWebSocket} from './wsEventDispatcher';
+var MapViewer = require('./mapViewer');
+
 var app
 $(function () {
   app = new App()
@@ -21,8 +26,12 @@ var App = function () {
   }
 
   var wsUrl = ((window.location.protocol == "https:") ? "wss:" : "ws:" + "//" + window.location.host)
-  wsUrl += '/blocks/websocket'
+  wsUrl += '/blocks/Blocks.WebSocket.cls'
   this.ws = new FancyWebSocket(wsUrl)
+
+  this.ws.bind('error', function (data) {
+    console.log(data)
+  })
 
   this.blocksViewer = new BlocksViewer(this, this.elements.blocksViewer)
 
@@ -31,6 +40,15 @@ var App = function () {
   this.init()
 
   return this
+}
+
+App.prototype.checkWSState = function () {
+  var self = this
+
+
+  setTimeout(function () {
+    self.checkWSState()
+  }, 1000)
 }
 
 App.prototype.load = function (url, data, callback) {

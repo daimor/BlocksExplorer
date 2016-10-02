@@ -1,3 +1,5 @@
+var $ = require('jquery')
+
 var MapViewer = function (app, container) {
   var self = this
 
@@ -223,3 +225,5 @@ function rgbToHex(r, g, b) {
     throw "Invalid color component"
   return (((r << 16) | (g << 8) | b) + 0x1000000).toString(16).substr(-6)
 }
+
+module.exports = MapViewer
