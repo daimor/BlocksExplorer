@@ -2,11 +2,13 @@ var $ = require('jquery');
 import {BlocksViewer} from './blocksViewer';
 import {FancyWebSocket} from './wsEventDispatcher';
 var MapViewer = require('./mapViewer');
+require('../css/main.css')
 
 var app
 $(function () {
   app = new App()
 })
+window.app = app;
 
 var App = function () {
   this.databaseSelect = $('#databaseSelect')
@@ -26,7 +28,7 @@ var App = function () {
   }
 
   var wsUrl = ((window.location.protocol == "https:") ? "wss:" : "ws:" + "//" + window.location.host)
-  wsUrl += '/blocks/Blocks.WebSocket.cls'
+  wsUrl += window.location.pathname + 'websocket'
   this.ws = new FancyWebSocket(wsUrl)
 
   this.ws.bind('error', function (data) {

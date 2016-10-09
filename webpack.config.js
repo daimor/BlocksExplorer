@@ -1,18 +1,16 @@
-'use strict';
+'use strict'
 var webpack = require('webpack');
 var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
+var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
   entry: {
     main: ['./js/main.js'],
-    styles: [
-      './css/main.css'
-    ]
   },
   devtool: 'source-map',
   output: {
-    path: path.resolve(__dirname, "build"),
+    path: path.resolve(__dirname, 'build'),
     filename: '[name].bundle.js',
     sourceMapFilename: '[name].map',
     chunkFilename: '[id].chunk.js'
@@ -29,7 +27,12 @@ module.exports = {
       },
       {
         test: /\.css$/,
-        loaders: ['style-loader', 'css-loader', 'postcss-loader']
+        loaders: ExtractTextPlugin.extract({
+          fallbackLoader: 'style-loader',
+          loader: ['css-loader', 'postcss-loader']
+          // loader: ['style-loader', 'css-loader'],
+          
+        })
       },
       {
         test: /\.html$/,
@@ -38,12 +41,16 @@ module.exports = {
     ]
   },
   plugins: [
+    new ExtractTextPlugin({
+      filename: 'styles.css',
+      allChunks: true
+    }),
     new HtmlWebpackPlugin({
       template: './index.html',
       chunksSortMode: 'dependency'
     }),
     new webpack.optimize.CommonsChunkPlugin({
-      name: ['main', 'styles']
+      name: ['main']
     }),
     new webpack.optimize.CommonsChunkPlugin({
       minChunks: Infinity,

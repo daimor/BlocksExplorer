@@ -1,8 +1,6 @@
 var gulp = require('gulp')
 var gutil = require('gulp-util')
 var clean = require('gulp-clean')
-var concat = require('gulp-concat')
-var uglify = require('gulp-uglify')
 var cheerio = require('gulp-cheerio')
 var htmlReplace = require('gulp-html-replace')
 var fs = require('fs')
@@ -146,8 +144,9 @@ gulp.task('serve', function (callback) {
       '/rest': {
         target: 'http://localhost:57774/blocks'
       },
-      '/blocks': {
-        target: 'ws://localhost:57774/',
+      '/websocket': {
+        target: 'ws://localhost:57774/blocks/rest',
+        changeOrigin: true,
         ws: true
       }
     }
