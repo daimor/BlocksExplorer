@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25">
+<Export generator="Cache" version="24">
 <Class name="Blocks.WebSocket">
 <Super>%CSP.WebSocket</Super>
 <TimeCreated>63812,72249.000955</TimeCreated>
@@ -142,16 +142,15 @@
         if action="ping" {
             set sc=..Write(action, "pong")
         } elseif $p(action,"_")="blocks" {
-        	do ..Write("error", action)
- //            set asTree=($piece(action,"_",2)="tree")
- //            
- //            do $system.Event.Clear(..ResourceName)
- //            
- //			job ##class(Blocks.WebSocket).GetBlocks(obj.data.directory, asTree, ..ResourceName)
- //			set child=$zchild
- //			set ..ChildPID = child
- //			
- //            set ..Event = action
+            set asTree=($piece(action,"_",2)="tree")
+            
+            do $system.Event.Clear(..ResourceName)
+            
+			job ##class(Blocks.WebSocket).GetBlocks(obj.data.directory, asTree, ..ResourceName)
+			set child=$zchild
+			set ..ChildPID = child
+			
+            set ..Event = action
         }
         
     } catch exception {

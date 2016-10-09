@@ -17,6 +17,18 @@
 ]]></Data>
 </XData>
 
+<Method name="Page">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	if (%request.GetCgiEnv("HTTP_CONNECTION") = "Upgrade") {
+		quit ##class(Blocks.WebSocket).Page()
+	}
+
+	quit ##super()
+]]></Implementation>
+</Method>
+
 <Method name="WebSocket">
 <ClassMethod>1</ClassMethod>
 <ReturnType>%Status</ReturnType>
