@@ -75,7 +75,6 @@
 <Method name="SendBlocksData">
 <ReturnType>%Status</ReturnType>
 <Implementation><![CDATA[
-	;do ..Write("error", "test0" _ ..Event)
     set st = $$$OK
     
     quit:..Event="" $$$OK

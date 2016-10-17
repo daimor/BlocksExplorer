@@ -2,6 +2,8 @@ var gulp = require('gulp')
 var gutil = require('gulp-util')
 var clean = require('gulp-clean')
 var cheerio = require('gulp-cheerio')
+var wrapper = require('gulp-wrapper')
+var rename = require('gulp-rename')
 var htmlReplace = require('gulp-html-replace')
 var fs = require('fs')
 var path = require('path')
@@ -34,6 +36,22 @@ gulp.task('webpack', ['clean'], function (callback) {
   });
 })
 
+gulp.task('csp', ['webpack'], function () {
+  return gulp.src([
+    './build/**/*',
+    '!./build/xml',
+    '!./build/**/*.xml'
+  ])
+  .pipe(wrapper({
+    header: '<?xml version="1.0" encoding="UTF-8"?>\n<Export generator="Cache" version="24">\n<CSP name="${filename}" application="/blocks/" default="1"><![CDATA[',
+    footer: ']]></CSP>\n</Export>'
+  }))
+  .pipe(rename(function(path ){
+    path.extname += '.xml'
+  }))
+  .pipe(gulp.dest('./build/xml/'))
+});
+
 gulp.task('xml', ['clean', 'webpack'], function () {
   return gulp.src([
     './BlocksExplorer.prj.xml',
@@ -41,26 +59,31 @@ gulp.task('xml', ['clean', 'webpack'], function () {
   ])
     .pipe(cheerio({
       run: function ($, file) {
-        var staticFiles = fs.readdirSync('./build/')
+        // var staticFiles = fs.readdirSync('./build/')
 
-        staticFiles.map(function (fileName) {
-          try {
-            fullName = path.join('./build/', fileName)
-            if (!fs.statSync(fullName).isDirectory()) {
-              $('Class[name="Blocks.Router"]').append($('<XData>')
-                .attr('name', fileName.replace(/\./g, '_'))
-                .append('<Description>*base64*</Description>')
-                .append(
-                $('<Data><![CDATA[ <data>' + (fs.readFileSync(fullName, {
-                  encoding: 'base64'
-                })).replace(/[\n\r]/g, '') + '</data> ]]> </Data>')
-                )
-              )
-            }
-          } catch (err) {
-            console.log(err)
-          }
-        })
+        // staticFiles.map(function (fileName) {
+        //   try {
+        //     fullName = path.join('./build/', fileName)
+        //     if (!fs.statSync(fullName).isDirectory()) {
+        //       $('Project>Items').append(
+        //         $('<ProjectItem>')
+        //           .attr('type', 'CSP')
+        //           .attr('name', fileName)
+        //       );
+        //       // $('Class[name="Blocks.Router"]').append($('<XData>')
+        //       //   .attr('name', fileName.replace(/\./g, '_'))
+        //       //   .append('<Description>*base64*</Description>')
+        //       //   .append(
+        //       //   $('<Data><![CDATA[ <data>' + (fs.readFileSync(fullName, {
+        //       //     encoding: 'base64'
+        //       //   })).replace(/[\n\r]/g, '') + '</data> ]]> </Data>')
+        //       //   )
+        //       // )
+        //     }
+        //   } catch (err) {
+        //     console.log(err)
+        //   }
+        // })
 
       },
       parserOptions: {
@@ -68,14 +91,14 @@ gulp.task('xml', ['clean', 'webpack'], function () {
         prettify: true
       }
     }))
-    .pipe(gulp.dest('./build/src/'))
+    .pipe(gulp.dest('./build/xml/'))
 })
 
-gulp.task('project', ['clean', 'xml', 'webpack'], function () {
+gulp.task('project', ['clean', 'xml', 'csp'], function () {
   return gulp.src([
-    './build/src/BlocksExplorer.prj.xml',
-    './build/src/**/*.xml',
-    '!./build/src/**/*Installer.cls.xml'
+    './build/xml/BlocksExplorer.prj.xml',
+    './build/xml/**/*.xml',
+    '!./build/xml/**/*Installer.cls.xml'
   ])
     .pipe(cacheBuilder('CacheBlocksExplorerProject.xml'))
     .pipe(gulp.dest('./build/'))
@@ -83,7 +106,7 @@ gulp.task('project', ['clean', 'xml', 'webpack'], function () {
 
 gulp.task('standalone', ['project'], function () {
   return gulp.src([
-    './build/src/StandaloneInstaller.cls.xml'
+    './build/xml/StandaloneInstaller.cls.xml'
   ])
     .pipe(cheerio({
       run: function ($, file) {
@@ -145,7 +168,7 @@ gulp.task('serve', function (callback) {
         target: 'http://localhost:57774/blocks'
       },
       '/websocket': {
-        target: 'ws://localhost:57774/blocks/rest',
+        target: 'ws://localhost:57774/blocks',
         changeOrigin: true,
         ws: true
       }

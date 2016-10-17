@@ -8,26 +8,14 @@
 <XData name="UrlMap">
 <Data><![CDATA[
 <Routes>
-<Route Url="/dblist" Method="GET" Call="DBList"/>
-<Route Url="/block/:block" Method="GET" Call="BlockInfo"/>
-<Route Url="/block/:block" Method="POST" Call="BlockInfo"/>
+<Route Url="(?:/rest)?/dblist" Method="GET" Call="DBList"/>
+<Route Url="(?:/rest)?/block/:block" Method="GET" Call="BlockInfo"/>
+<Route Url="(?:/rest)?/block/:block" Method="POST" Call="BlockInfo"/>
 <Route Url="/websocket" Method="GET" Call="WebSocket"/>
 <Route Url="/((?!rest/).*)" Method="GET" Call="GetStatic"/>
 </Routes>
 ]]></Data>
 </XData>
-
-<Method name="Page">
-<ClassMethod>1</ClassMethod>
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
-	if (%request.GetCgiEnv("HTTP_CONNECTION") = "Upgrade") {
-		quit ##class(Blocks.WebSocket).Page()
-	}
-
-	quit ##super()
-]]></Implementation>
-</Method>
 
 <Method name="WebSocket">
 <ClassMethod>1</ClassMethod>
