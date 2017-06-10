@@ -6,7 +6,7 @@ var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 module.exports = {
   entry: {
-    main: ['./js/main.js'],
+    main: ['./src/app/js/main.js'],
   },
   devtool: 'source-map',
   output: {
@@ -16,7 +16,7 @@ module.exports = {
     chunkFilename: '[id].chunk.js'
   },
   module: {
-    loaders: [
+    rules: [
       {
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/,
@@ -26,11 +26,18 @@ module.exports = {
         }
       },
       {
+        test: /\.scss$/,
+        use: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: ['css-loader', 'postcss-loader', 'sass-loader']
+          
+        })
+      },
+      {
         test: /\.css$/,
-        loaders: ExtractTextPlugin.extract({
-          fallbackLoader: 'style-loader',
-          loader: ['css-loader', 'postcss-loader']
-          // loader: ['style-loader', 'css-loader'],
+        use: ExtractTextPlugin.extract({
+          fallback: 'style-loader',
+          use: ['css-loader', 'postcss-loader']
           
         })
       },
@@ -46,7 +53,7 @@ module.exports = {
       allChunks: true
     }),
     new HtmlWebpackPlugin({
-      template: './index.html',
+      template: './src/app/index.html',
       chunksSortMode: 'dependency'
     }),
     new webpack.optimize.CommonsChunkPlugin({
@@ -61,7 +68,7 @@ module.exports = {
   ],
   node: {
     fs: 'empty',
-    global: 'window',
+    global: true,
     crypto: 'empty',
     module: false,
     clearImmediate: false,

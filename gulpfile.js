@@ -18,7 +18,7 @@ gulp.task('build', ['xml'])
 
 gulp.task('clean', function () {
   return gulp.src([
-    './build/'
+    './dist/'
   ], {
       read: false
     })
@@ -38,9 +38,9 @@ gulp.task('webpack', ['clean'], function (callback) {
 
 gulp.task('csp', ['webpack'], function () {
   return gulp.src([
-    './build/**/*',
-    '!./build/xml',
-    '!./build/**/*.xml'
+    './dist/**/*',
+    '!./dist/xml',
+    '!./dist/**/*.xml'
   ])
   .pipe(wrapper({
     header: '<?xml version="1.0" encoding="UTF-8"?>\n<Export generator="Cache" version="24">\n<CSP name="${filename}" application="/blocks/" default="1"><![CDATA[',
@@ -49,7 +49,7 @@ gulp.task('csp', ['webpack'], function () {
   .pipe(rename(function(path ){
     path.extname += '.xml'
   }))
-  .pipe(gulp.dest('./build/xml/'))
+  .pipe(gulp.dest('./dist/xml/'))
 });
 
 gulp.task('xml', ['clean', 'webpack'], function () {
@@ -59,58 +59,32 @@ gulp.task('xml', ['clean', 'webpack'], function () {
   ])
     .pipe(cheerio({
       run: function ($, file) {
-        // var staticFiles = fs.readdirSync('./build/')
-
-        // staticFiles.map(function (fileName) {
-        //   try {
-        //     fullName = path.join('./build/', fileName)
-        //     if (!fs.statSync(fullName).isDirectory()) {
-        //       $('Project>Items').append(
-        //         $('<ProjectItem>')
-        //           .attr('type', 'CSP')
-        //           .attr('name', fileName)
-        //       );
-        //       // $('Class[name="Blocks.Router"]').append($('<XData>')
-        //       //   .attr('name', fileName.replace(/\./g, '_'))
-        //       //   .append('<Description>*base64*</Description>')
-        //       //   .append(
-        //       //   $('<Data><![CDATA[ <data>' + (fs.readFileSync(fullName, {
-        //       //     encoding: 'base64'
-        //       //   })).replace(/[\n\r]/g, '') + '</data> ]]> </Data>')
-        //       //   )
-        //       // )
-        //     }
-        //   } catch (err) {
-        //     console.log(err)
-        //   }
-        // })
-
       },
       parserOptions: {
         xmlMode: true,
         prettify: true
       }
     }))
-    .pipe(gulp.dest('./build/xml/'))
+    .pipe(gulp.dest('./dist/xml/'))
 })
 
 gulp.task('project', ['clean', 'xml', 'csp'], function () {
   return gulp.src([
-    './build/xml/BlocksExplorer.prj.xml',
-    './build/xml/**/*.xml',
-    '!./build/xml/**/*Installer.cls.xml'
+    './dist/xml/BlocksExplorer.prj.xml',
+    './dist/xml/**/*.xml',
+    '!./dist/xml/**/*Installer.cls.xml'
   ])
     .pipe(cacheBuilder('CacheBlocksExplorerProject.xml'))
-    .pipe(gulp.dest('./build/'))
+    .pipe(gulp.dest('./dist/'))
 })
 
 gulp.task('standalone', ['project'], function () {
   return gulp.src([
-    './build/xml/StandaloneInstaller.cls.xml'
+    './dist/xml/StandaloneInstaller.cls.xml'
   ])
     .pipe(cheerio({
       run: function ($, file) {
-        var projectFile = './build/CacheBlocksExplorerProject.xml'
+        var projectFile = './dist/CacheBlocksExplorerProject.xml'
         var projectData = (fs.readFileSync(projectFile, {
           encoding: 'base64'
         })).replace(/[\r\n]/g, '')
@@ -135,7 +109,7 @@ gulp.task('standalone', ['project'], function () {
         prettify: true
       }
     }))
-    .pipe(gulp.dest('./build/'))
+    .pipe(gulp.dest('./dist/'))
 })
 
 gulp.task('serve', function (callback) {

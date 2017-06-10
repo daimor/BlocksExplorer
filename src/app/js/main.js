@@ -1,10 +1,14 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25">
-<CSP name="js/main.js" application="/csp/blocks/"><![CDATA[
+var $ = require('jquery');
+import {BlocksViewer} from './blocksViewer';
+import {FancyWebSocket} from './wsEventDispatcher';
+var MapViewer = require('./mapViewer');
+require('../styles/main.scss')
+
 var app
 $(function () {
   app = new App()
 })
+window.app = app;
 
 var App = function () {
   this.databaseSelect = $('#databaseSelect')
@@ -24,8 +28,12 @@ var App = function () {
   }
 
   var wsUrl = ((window.location.protocol == "https:") ? "wss:" : "ws:" + "//" + window.location.host)
-  wsUrl += '/blocks/Blocks.WebSocket.cls'
+  wsUrl += window.location.pathname + 'Blocks.WebSocket.cls'
   this.ws = new FancyWebSocket(wsUrl)
+
+  this.ws.bind('error', function (data) {
+    console.log(data)
+  })
 
   this.blocksViewer = new BlocksViewer(this, this.elements.blocksViewer)
 
@@ -34,6 +42,15 @@ var App = function () {
   this.init()
 
   return this
+}
+
+App.prototype.checkWSState = function () {
+  var self = this
+
+
+  setTimeout(function () {
+    self.checkWSState()
+  }, 1000)
 }
 
 App.prototype.load = function (url, data, callback) {
@@ -150,5 +167,3 @@ App.prototype.init = function () {
     self.restoreState()
   })
 }
-]]></CSP>
-</Export>
