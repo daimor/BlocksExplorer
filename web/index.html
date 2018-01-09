@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head lang="en">
+  <meta charset="UTF-8">
+  <title>Cache Blocks explorer</title>
+  <link id="favicon" rel="shortcut icon" href="#" />
+</head>
+
+<body>
+  <input type='checkbox' id='viewType' />
+  <div class="mapWrapper">
+    <div>
+      <div class='legendWrapper'>
+        <ul class='mapLegend'>
+        </ul>
+        <div class='header'>
+          <span>GlobalName</span>
+          <span>blocks count / fill</span>
+        </div>
+      </div>
+      <div id='map'>
+        <div class="mask"></div>
+        <canvas>
+      </div>
+    </div>
+  </div>
+  <div class="blocksTreeWrapper">
+    <div id="blocksViewer">
+    </div>
+    <div id='navigator'>
+    </div>
+    <div class='blocksTreeToolBar'>
+      <div id='btnZoomIn' class="icon plus"></div>
+      <div id='btnZoomToFit' class="icon zoomtofit button">fit</div>
+      <div id='btnZoomOut' class="icon minus"></div>
+      <div id='btnDownloadSVG' class="icon button">SVG</div>
+      <div id='btnDownloadPNG' class="icon button">PNG</div>
+    </div>
+  </div>
+  <div id='header'>
+    <select id='databaseSelect' disabled="" class='icon select item'>
+      <option>Loading...</option>
+    </select>
+    <div class='toggle item'>
+      <span>
+        <label for='viewType'></label>
+      </span>
+    </div>
+    <div class='blockInfo item'>
+    </div>
+  </div>
+</body>
+
+</html>

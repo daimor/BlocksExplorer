@@ -1,45 +1,30 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="24">
-<Class name="Blocks.WebSocket">
-<Super>%CSP.WebSocket</Super>
-<TimeCreated>63812,72249.000955</TimeCreated>
+Class Blocks.WebSocket Extends %CSP.WebSocket
+{
 
-<Parameter name="UseSession">
-<Default>0</Default>
-</Parameter>
+Parameter UseSession = 0;
 
-<Property name="ResourceName">
-<Type>%String</Type>
-</Property>
+Property ResourceName As %String;
 
-<Property name="ChildPID">
-<Type>%Integer</Type>
-</Property>
+Property ChildPID As %Integer;
 
-<Property name="Event">
-<Type>%String</Type>
-</Property>
+Property Event As %String;
 
-<Method name="ResourceNameGet">
-<ReturnType>%String</ReturnType>
-<Implementation><![CDATA[
+Method ResourceNameGet() As %String
+{
 	set resName = "blocks" _ $job
 	if '$system.Event.Defined(resName) {
 		do $system.Event.Create(resName)
 	}
 	quit resName
-]]></Implementation>
-</Method>
+}
 
-<Method name="OnPreServer">
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[    Quit $$$OK
-]]></Implementation>
-</Method>
+Method OnPreServer() As %Status
+{
+    Quit $$$OK
+}
 
-<Method name="Server">
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
+Method Server() As %Status
+{
     Set timeout=.5
     set quit=0
     set dataGN="",event=""
@@ -69,12 +54,10 @@
     }
     Set status=..EndServer()
     Quit $$$OK
-]]></Implementation>
-</Method>
+}
 
-<Method name="SendBlocksData">
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
+Method SendBlocksData() As %Status
+{
     set st = $$$OK
     
     quit:..Event="" $$$OK
@@ -126,13 +109,10 @@
     }
 	
     quit $$$OK
-]]></Implementation>
-</Method>
+}
 
-<Method name="Action">
-<FormalSpec>obj:%ZEN.proxyObject</FormalSpec>
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
+Method Action(obj As %ZEN.proxyObject) As %Status
+{
     set st = $$$OK
     #dim exception As %Exception.AbstractException
     try {
@@ -156,19 +136,15 @@
         set st = exception.AsStatus()
     }
     quit st
-]]></Implementation>
-</Method>
+}
 
-<Method name="OnPostServer">
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[    Quit $$$OK
-]]></Implementation>
-</Method>
+Method OnPostServer() As %Status
+{
+    Quit $$$OK
+}
 
-<Method name="GetBlocks">
-<ClassMethod>1</ClassMethod>
-<FormalSpec>aDirectory:%String="",aAsTree:%Boolean=0,ResourceName:%String=""</FormalSpec>
-<Implementation><![CDATA[
+ClassMethod GetBlocks(aDirectory As %String = "", aAsTree As %Boolean = 0, ResourceName As %String = "")
+{
     set resName="blocks"_$zparent
     quit:aDirectory="" 0
     
@@ -186,13 +162,10 @@
     CLOSE 63
     $$$ThrowOnError(tSC)
     quit $$$OK
-]]></Implementation>
-</Method>
+}
 
-<Method name="ReadBlocks">
-<ClassMethod>1</ClassMethod>
-<FormalSpec>aAsTree:%Boolean=0,aBlockId:%Integer=3,aParentBlock="",aGlobal:%String="",aHasLong=0,ResourceName:%String=""</FormalSpec>
-<Implementation><![CDATA[
+ClassMethod ReadBlocks(aAsTree As %Boolean = 0, aBlockId As %Integer = 3, aParentBlock = "", aGlobal As %String = "", aHasLong = 0, ResourceName As %String = "")
+{
 #define toInt(%bytes) ($a(%bytes,1)+($a(%bytes,2)*256)+($a(%bytes,3)*65536)+($a(%bytes,4)*16777216))
 
     new $namespace
@@ -256,29 +229,22 @@ add(parentBlock,blockId,global,offset)
     set data=$listbuild(parentBlock,blockId)
     if 'aAsTree set data=data_$listbuild(global,$j(offset/blockSize*100,0,0))
  	do $system.Event.Signal(ResourceName, data)
-]]></Implementation>
-</Method>
+}
 
-<Method name="Read">
-<Description>
-Reads up to len characters from the client.
-If the call is successful the status (sc) will be returned as $$$OK, otherwise an error code of $$$CSPWebSocketTimeout 
-indicates a timeout and $$$CSPWebSocketClosed indicates that the client has terminated the WebSocket.</Description>
-<FormalSpec><![CDATA[&len:%Integer=32656,&sc:%Status,timeout:%Integer=86400]]></FormalSpec>
-<ReturnType>%String</ReturnType>
-<Implementation><![CDATA[
+/// Reads up to len characters from the client.
+/// If the call is successful the status (sc) will be returned as $$$OK, otherwise an error code of $$$CSPWebSocketTimeout 
+/// indicates a timeout and $$$CSPWebSocketClosed indicates that the client has terminated the WebSocket.
+Method Read(ByRef len As %Integer = 32656, ByRef sc As %Status, timeout As %Integer = 86400) As %String
+{
     Set json = ##super(len, .sc, timeout)
     Do:$$$ISERR(sc) ..EndServer()
     Set st = ##class(%ZEN.Auxiliary.jsonProvider).%ConvertJSONToObject(json,,.obj,1)
     Do:$$$ISERR(st) ..EndServer()
     Quit obj
-]]></Implementation>
-</Method>
+}
 
-<Method name="Write">
-<FormalSpec>eventName:%String="",data:%String</FormalSpec>
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
+Method Write(eventName As %String = "", data As %String) As %Status
+{
     if '$d(data) {
         quit ##super(eventName)
     }
@@ -287,15 +253,10 @@ indicates a timeout and $$$CSPWebSocketClosed indicates that the client has term
     set response.data = data
     
     Quit ##super(..OutputToStr(response,"%ToJSON"))
-]]></Implementation>
-</Method>
+}
 
-<Method name="OutputToStr">
-<ClassMethod>1</ClassMethod>
-<FormalSpec>obj,method,args...</FormalSpec>
-<ProcedureBlock>0</ProcedureBlock>
-<ReturnType>%String</ReturnType>
-<Implementation><![CDATA[
+ClassMethod OutputToStr(obj, method, args...) As %String [ ProcedureBlock = 0 ]
+{
     Set str=""
     //Redirect IO to the current routine - makes use of the labels defined below
     Use $io::("^"_$ZNAME)
@@ -330,7 +291,6 @@ wtab(s)      Do output($char(9))  quit
     //Output label - this is where you would handle what you actually want to Do.
     //  in our case, we want to Write to str
 output(s)    Set str=str_s   quit
-]]></Implementation>
-</Method>
-</Class>
-</Export>
+}
+
+}

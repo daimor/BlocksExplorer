@@ -4,10 +4,11 @@ var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
+const db_host = process.env['DB_HOST'] || 'localhost'
+const db_port = process.env['DB_PORT'] || 57772
+
 module.exports = {
-  entry: {
-    main: ['./src/app/js/main.js'],
-  },
+  entry: './js/main.js',
   devtool: 'source-map',
   output: {
     path: path.resolve(__dirname, 'build'),
@@ -20,17 +21,14 @@ module.exports = {
       {
         test: /\.js$/,
         exclude: /(node_modules|bower_components)/,
-        loader: 'babel-loader',
-        query: {
-          presets: ['es2015']
-        }
+        loader: 'babel-loader'
       },
       {
         test: /\.scss$/,
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
           use: ['css-loader', 'postcss-loader', 'sass-loader']
-          
+
         })
       },
       {
@@ -38,7 +36,7 @@ module.exports = {
         use: ExtractTextPlugin.extract({
           fallback: 'style-loader',
           use: ['css-loader', 'postcss-loader']
-          
+
         })
       },
       {
@@ -53,7 +51,7 @@ module.exports = {
       allChunks: true
     }),
     new HtmlWebpackPlugin({
-      template: './src/app/index.html',
+      template: './index.html',
       chunksSortMode: 'dependency'
     }),
     new webpack.optimize.CommonsChunkPlugin({
@@ -75,6 +73,16 @@ module.exports = {
     setImmediate: false
   },
   devServer: {
-    inline: true
+    inline: true,
+    proxy: {
+      '/rest': {
+        target: `http://${db_host}:${db_port}/blocks`
+      },
+      '/websocket': {
+        target: `ws://${db_host}:${db_port}/blocks`,
+        changeOrigin: true,
+        ws: true
+      }
+    }
   }
 };

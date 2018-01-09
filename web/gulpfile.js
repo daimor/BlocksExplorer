@@ -113,11 +113,13 @@ gulp.task('standalone', ['project'], function () {
 })
 
 gulp.task('serve', function (callback) {
-  const host = 'localhost'
+  const host = '0.0.0.0'
   const port = 9000
 
-  var webpackConfig = require('./webpack.config.js')
+  const db_host = process.env['DB_HOST'] || 'localhost'
+  const db_port = process.env['DB_PORT'] || 57772
 
+  var webpackConfig = require('./webpack.config.js')
   webpackConfig.entry.main.unshift(
     `webpack-dev-server/client?http://${host}:${port}/`
   );
@@ -125,29 +127,24 @@ gulp.task('serve', function (callback) {
   var compiler = webpack(webpackConfig)
 
   var WebpackDevServerConfig = {
-    contentBase: './',
-    historyApiFallback: true,
     stats: {
-      assets: true,
       colors: true,
-      version: true,
-      hash: true,
-      timings: true,
-      chunks: false,
-      chunkModules: false
+      progress: true
     },
     inline: true,
     proxy: {
       '/rest': {
-        target: 'http://localhost:57774/blocks'
+        target: `http://${db_host}:${db_port}/blocks`
       },
       '/websocket': {
-        target: 'ws://localhost:57774/blocks',
+        target: `ws://${db_host}:${db_port}/blocks`,
         changeOrigin: true,
         ws: true
       }
     }
   }
+
+  console.log('Start WebpackDevServer', WebpackDevServerConfig);
 
   const server = new WebpackDevServer(compiler, WebpackDevServerConfig)
   server.listen(port, host, function (err) {

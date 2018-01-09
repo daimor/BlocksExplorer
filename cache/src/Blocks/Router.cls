@@ -1,36 +1,40 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="24">
-<Class name="Blocks.Router">
-<IncludeCode>%syDatabase</IncludeCode>
-<Super>%CSP.REST</Super>
-<TimeCreated>63776,33612.994296</TimeCreated>
+Include %syDatabase
 
-<XData name="UrlMap">
-<Data><![CDATA[
+Class Blocks.Router Extends %CSP.REST
+{
+
+XData UrlMap
+{
 <Routes>
-<Route Url="(?:/rest)?/dblist" Method="GET" Call="DBList"/>
-<Route Url="(?:/rest)?/block/:block" Method="GET" Call="BlockInfo"/>
-<Route Url="(?:/rest)?/block/:block" Method="POST" Call="BlockInfo"/>
-<Route Url="/websocket" Method="GET" Call="WebSocket"/>
-<Route Url="/((?!rest/).*)" Method="GET" Call="GetStatic"/>
+    <Route Url="(?:/rest)?/dblist" Method="GET" Call="DBList"/>
+    <Route Url="(?:/rest)?/block/:block" Method="GET" Call="BlockInfo"/>
+    <Route Url="(?:/rest)?/block/:block" Method="POST" Call="BlockInfo"/>
+    <Route Url="/websocket" Method="GET" Call="WebSocket"/>
+    <Route Url="/((?!rest/).*)" Method="GET" Call="GetStatic"/>
 </Routes>
-]]></Data>
-</XData>
+}
 
-<Method name="WebSocket">
-<ClassMethod>1</ClassMethod>
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[    quit ##class(Blocks.WebSocket).Page()
-]]></Implementation>
-</Method>
+ClassMethod WebSocket() As %Status
+{
+    quit ##class(Blocks.WebSocket).Page()
+}
 
-<Method name="GetStatic">
-<ClassMethod>1</ClassMethod>
-<FormalSpec>pName:%String=""</FormalSpec>
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
+ClassMethod outputJSON(data)
+{
+#dim %response As %CSP.Response
+	set %response.ContentType = "application/json"
+
+	if $data(data),$isobject(data) {
+		quit data.%ToJSON()
+	}
+
+	quit $$$OK
+}
+
+ClassMethod GetStatic(pName As %String = "") As %Status
+{
     #dim %response As %CSP.Response
-    
+
     set tName = pName
     if tName = "" set tName = "index.html"
     set tName = $tr(tName,".","_")
@@ -44,8 +48,8 @@
         set isBase64=xdata.Description["*base64*"
         if $isobject(textreader) {
             set data=""
-            while textreader.Read() { 
-                if (textreader.NodeType="chars") { 
+            while textreader.Read() {
+                if (textreader.NodeType="chars") {
                     if isBase64 {
                         set data=data_textreader.Value
                         set data=$translate(data,$char(13,10))
@@ -55,7 +59,7 @@
                     } else {
                         write textreader.Value
                     }
-                } 
+                }
             }
             write $system.Encryption.Base64Decode(data)
             quit $$$OK
@@ -63,7 +67,7 @@
             quit xdata.Data.OutputToDevice()
         }
     }
-    
+
     set tName = %request.GetCgiEnv("SCRIPT_FILENAME")
     if pName = "" set tName = ##class(%File).NormalizeFilename("index.html", tName)
     if ##class(%File).Exists(tName) {
@@ -72,19 +76,16 @@
         quit stream.OutputToDevice()
     }
     quit $$$OK
-]]></Implementation>
-</Method>
+}
 
-<Method name="DBList">
-<ClassMethod>1</ClassMethod>
-<ReturnType>%Status</ReturnType>
-<Implementation><![CDATA[
+ClassMethod DBList() As %Status
+{
     new $namespace
     znspace "%SYS"
 
     write "["
     set first = 1
-    
+
     set tStatement=##class(%SQL.Statement).%New()
     set tSC=tStatement.%PrepareClassQuery("Config.Databases","List")
     #dim rset As %SQL.StatementResult = tStatement.%Execute()
@@ -94,7 +95,7 @@
         set was($zconvert(dir,"L"))=name
         do add(name,dir)
     }
-    
+
     set tSC=tStatement.%PrepareClassQuery("SYS.Database","List")
     set rset = tStatement.%Execute()
     while rset.%Next() {
@@ -103,7 +104,7 @@
         do add(dir,dir)
     }
     write "]"
-    quit $$$OK
+    quit ..outputJSON()
 add(name,dir)
     set db=##class(SYS.Database).%OpenId(dir)
     set blocks=db.Size*1024*1024/db.BlockSize
@@ -114,20 +115,16 @@ add(name,dir)
     if 'first write ", "
     set first = 0
     do tJSON.%ToJSON()
-]]></Implementation>
-</Method>
+}
 
-<Method name="BlockInfo">
-<ClassMethod>1</ClassMethod>
-<FormalSpec>pBlock</FormalSpec>
-<ProcedureBlock>0</ProcedureBlock>
-<Implementation><![CDATA[
+ClassMethod BlockInfo(pBlock) [ ProcedureBlock = 0 ]
+{
     new $namespace
     znspace "%SYS"
-    
+
     set Directory=$select($isobject($get(%request)):%request.Get("directory"),1:"")
     set:Directory="" Directory=$zutil(12,"samples")
-        
+
 
     Set tJSON = ##class(%ZEN.proxyObject).%New()
     set tJSON.blockId = pBlock
@@ -138,7 +135,7 @@ add(name,dir)
         set rc=$$FindPointerBlock^DMREPAIR(Directory,pBlock,.upblock)
 
         set rc=$$ParseRepairBlock^DMREPAIR(Directory,pBlock,,.OFF,.REPAIR,.REPPRINT,.REPVAL,.REPCCC,.REPLEN,.REPPAD,.REPSUB,.REPBIG,.REPINFO,.N,.TYPE,.LINK,.BIGCOUNT,.PNTLEN,.NEXTPNTLEN,.NEXTPNTVAL,.NEXTPNTOFF,.PNTREF,.NEXTPNTREF,.BLINCVER,.COLLATE,.GARTREE)
-    
+
         set:$data(OFF) tJSON.offset=OFF
         if $data(TYPE) {
             set tJSON.type=TYPE
@@ -155,11 +152,11 @@ add(name,dir)
         set:$data(NEXTPNTOFF) tJSON.nextPointerOffset=NEXTPNTOFF
         set:$data(NEXTPNTREF("internal"),val) tJSON.nextPointerRefInt=$system.Encryption.Base64Encode(val)
         set:$data(NEXTPNTREF("printable"),val) tJSON.nextPointerRef=val
-        
+
         set:$data(COLLATE) tJSON.collate=COLLATE
-        
+
         for i=1:1:N {
-            
+
             set tNode=##class(%ArrayOfDataTypes).%New()
             do tNode.SetAt(i,"nodeId")
 
@@ -177,18 +174,17 @@ add(name,dir)
                     do tNode.SetAt($listget(val,2),"blockId")
                 }
             }
-            
+
             do tJSON.nodes.Insert(tNode)
         }
     } catch error {
     }
-    
+
     if $isobject(error) {
         quit error.AsStatus()
     }
-    
-    quit tJSON.%ToJSON()
-]]></Implementation>
-</Method>
-</Class>
-</Export>
+
+    quit ..outputJSON(tJSON)
+}
+
+}
