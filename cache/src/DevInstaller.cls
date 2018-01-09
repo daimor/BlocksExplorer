@@ -26,6 +26,8 @@ XData setup [ XMLNamespace = INSTALLER ]
     <CSPApplication
       Url="${CSPAPP}"
       Directory="${CSPAPPDIR}"
+      CookiePath="/"
+      EventClass="Blocks.SessionHandler"
       IsNamespaceDefault="1" />
   </Namespace>
   <Namespace Name="${CURRENTNS}">

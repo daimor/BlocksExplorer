@@ -36,10 +36,6 @@ var App = function () {
     console.log(data)
   })
 
-  this.ws.bind('pong', function (data) {
-    console.log(data)
-  })
-
   this.blocksViewer = new BlocksViewer(this, this.elements.blocksViewer)
 
   this.mapViewer = new MapViewer(this, this.elements.mapViewer)
@@ -114,7 +110,7 @@ App.prototype.setDatabase = function (directory, blocks) {
 App.prototype.reset = function () {
   this.blocksViewer.reset()
   this.mapViewer.reset()
-  this.databaseSelect.find('option:first').attr('selected', true)
+  this.databaseSelect.val('')
   this.database = null
   this.saveState()
   this.blockInfo.empty()

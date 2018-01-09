@@ -3,8 +3,6 @@ Include %syDatabase
 Class Blocks.Router Extends %CSP.REST
 {
 
-Parameter UseSession = 1;
-
 XData UrlMap
 {
 <Routes>
