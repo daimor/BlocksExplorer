@@ -7,8 +7,9 @@ require('../styles/main.scss')
 var app
 $(function () {
   app = new App()
+  window.app = app;
+
 })
-window.app = app;
 
 var App = function () {
   this.databaseSelect = $('#databaseSelect')
@@ -32,6 +33,10 @@ var App = function () {
   this.ws = new FancyWebSocket(wsUrl)
 
   this.ws.bind('error', function (data) {
+    console.log(data)
+  })
+
+  this.ws.bind('pong', function (data) {
     console.log(data)
   })
 

@@ -4,22 +4,29 @@ Class Blocks.DevInstaller
 XData setup [ XMLNamespace = INSTALLER ]
 {
 <Manifest>
-  <Default Name="FOLDER" Dir="/opt/cacheblocksexplorer/" />
+  <Default Name="FOLDER" Dir="/opt/blocks/" />
+  <Default Name="APPDATA" Dir="${FOLDER}src" />
   <Default Name="NAMESPACE" Value="BLOCKS" />
   <Default Name="DBNAME" Value="BLOCKS" />
   <Default Name="DBPATH" Dir="${FOLDER}data" />
   <Default Name="CSPAPP" Value="/blocks" />
   <Default Name="CSPAPPDIR" Dir="${FOLDER}web" />
 
-  <Namespace Name="${NAMESPACE}" Ensemble="false" Create="yes">
+  <!-- TEST Temp DB -->
+  <Default Name="TESTDB" Value="TEST" />
+  <Default Name="TESTDBPATH" Dir="${FOLDER}test" />
+
+  <Namespace Name="${NAMESPACE}" Ensemble="false" Create="yes" Code="${DBNAME}" Data="${DBNAME}">
     <Configuration>
-      <Database Name="${DBNAME}" Dir="${DBPATH}" Create="overwrite"/>
-      <Import File="${APPDATA}" IgnoreErrors="true" Recurse="true"/>
-      <CSPApplication
-        Url="${CSPAPP}"
-        Directory="${CSPAPPDIR}"
-        IsNamespaceDefault="1" />
+      <Database Name="${DBNAME}" Dir="${DBPATH}" Create="yes"/>
+      <Database Name="${TESTDB}" Dir="${TESTDBPATH}" Create="yes"/>
     </Configuration>
+
+    <Import File="${APPDATA}" IgnoreErrors="true" Recurse="true"/>
+    <CSPApplication
+      Url="${CSPAPP}"
+      Directory="${CSPAPPDIR}"
+      IsNamespaceDefault="1" />
   </Namespace>
   <Namespace Name="${CURRENTNS}">
     <Invoke Class="${CURRENTCLASS}" Method="SetDispatchClass" CheckStatus="true">
@@ -27,6 +34,7 @@ XData setup [ XMLNamespace = INSTALLER ]
       <Arg Value="Blocks.Router"/>
     </Invoke>
   </Namespace>
+
 </Manifest>
 }
 
@@ -34,9 +42,7 @@ ClassMethod setupWithVars(
   pRootDir As %String = ""
 )
 {
-  set vars("APPDATA") = ##class(%File).NormalizeDirectory("src", pRootDir)
-  set vars("DBPATH") = ##class(%File).NormalizeDirectory("data", pRootDir)
-  set vars("TESTDBPATH") = ##class(%File).NormalizeDirectory("test", pRootDir)
+  set vars("FOLDER") = ##class(%File).NormalizeDirectory(pRootDir)
   quit ..setup(.vars)
 }
 

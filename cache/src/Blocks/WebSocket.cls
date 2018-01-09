@@ -59,12 +59,12 @@ Method Server() As %Status
 Method SendBlocksData() As %Status
 {
     set st = $$$OK
-    
+
     quit:..Event="" $$$OK
-    
+
     set child = ..ChildPID
-    set resName = ..ResourceName 
-    
+    set resName = ..ResourceName
+
     set responseData = ##class(%ListOfDataTypes).%New()
     kill blocksData
     set countData=0
@@ -107,7 +107,7 @@ Method SendBlocksData() As %Status
     if atEnd {
         set ..Event = ""
     }
-	
+
     quit $$$OK
 }
 
@@ -122,16 +122,16 @@ Method Action(obj As %ZEN.proxyObject) As %Status
             set sc=..Write(action, "pong")
         } elseif $p(action,"_")="blocks" {
             set asTree=($piece(action,"_",2)="tree")
-            
+
             do $system.Event.Clear(..ResourceName)
-            
+
 			job ##class(Blocks.WebSocket).GetBlocks(obj.data.directory, asTree, ..ResourceName)
 			set child=$zchild
 			set ..ChildPID = child
-			
+
             set ..Event = action
         }
-        
+
     } catch exception {
         set st = exception.AsStatus()
     }
@@ -147,18 +147,18 @@ ClassMethod GetBlocks(aDirectory As %String = "", aAsTree As %Boolean = 0, Resou
 {
     set resName="blocks"_$zparent
     quit:aDirectory="" 0
-    
+
     new $namespace
     znspace "%sys"
-    
+
     OPEN 63:"^^"_aDirectory
-    
+
     try {
     	set tSC=..ReadBlocks(aAsTree, 3, "", "", 0, ResourceName)
     } catch ex {
     	set tSC=ex.AsSystemError()
     }
-        
+
     CLOSE 63
     $$$ThrowOnError(tSC)
     quit $$$OK
@@ -171,7 +171,7 @@ ClassMethod ReadBlocks(aAsTree As %Boolean = 0, aBlockId As %Integer = 3, aParen
     new $namespace
     znspace "%SYS"
     quit:aBlockId=0 0
-    
+
     set blockSize=8192
 
     #dim error As %Exception.AbstractException = ""
@@ -213,17 +213,17 @@ ClassMethod ReadBlocks(aAsTree As %Boolean = 0, aBlockId As %Integer = 3, aParen
                 set nodes($increment(nodes))=$listbuild(nextBlock,aGlobal,haslong)
             }
         }
-        
+
         for i=1:1:nodes {
             do ..ReadBlocks(aAsTree, $listget(nodes(i)), aBlockId, $listget(nodes(i),2), $listget(nodes(i),3), ResourceName)
         }
     } catch error {
-        
-    }   
-    #; finally 
-    
+
+    }
+    #; finally
+
     if $isobject(error) Throw error
-        
+
     quit $$$OK
 add(parentBlock,blockId,global,offset)
     set data=$listbuild(parentBlock,blockId)
@@ -232,7 +232,7 @@ add(parentBlock,blockId,global,offset)
 }
 
 /// Reads up to len characters from the client.
-/// If the call is successful the status (sc) will be returned as $$$OK, otherwise an error code of $$$CSPWebSocketTimeout 
+/// If the call is successful the status (sc) will be returned as $$$OK, otherwise an error code of $$$CSPWebSocketTimeout
 /// indicates a timeout and $$$CSPWebSocketClosed indicates that the client has terminated the WebSocket.
 Method Read(ByRef len As %Integer = 32656, ByRef sc As %Status, timeout As %Integer = 86400) As %String
 {
@@ -251,7 +251,7 @@ Method Write(eventName As %String = "", data As %String) As %Status
     set response = ##class(%ZEN.proxyObject).%New()
     set response.event = eventName
     set response.data = data
-    
+
     Quit ##super(..OutputToStr(response,"%ToJSON"))
 }
 
@@ -260,19 +260,19 @@ ClassMethod OutputToStr(obj, method, args...) As %String [ ProcedureBlock = 0 ]
     Set str=""
     //Redirect IO to the current routine - makes use of the labels defined below
     Use $io::("^"_$ZNAME)
-    
+
     //Enable redirection
     Do ##class(%Device).ReDirectIO(1)
-    
+
     if $isobject(obj) {
         Do $Method(obj,method,args...)
     } elseif $$$comClassDefined(obj) {
         Do $ClassMethod(obj,method,args...)
     }
-    
+
     //Disable redirection
     Do ##class(%Device).ReDirectIO(0)
-    Quit str      
+    Quit str
     //Labels that allow for IO redirection
     //Read Character - we Don't care about reading
 rchr(c)      quit

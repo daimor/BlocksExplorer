@@ -3,10 +3,13 @@ Include %syDatabase
 Class Blocks.Router Extends %CSP.REST
 {
 
+Parameter UseSession = 1;
+
 XData UrlMap
 {
 <Routes>
     <Route Url="(?:/rest)?/dblist" Method="GET" Call="DBList"/>
+    <Route Url="(?:/rest)?/ping" Method="GET" Call="Ping"/>
     <Route Url="(?:/rest)?/block/:block" Method="GET" Call="BlockInfo"/>
     <Route Url="(?:/rest)?/block/:block" Method="POST" Call="BlockInfo"/>
     <Route Url="/websocket" Method="GET" Call="WebSocket"/>
@@ -25,7 +28,12 @@ ClassMethod outputJSON(data)
 	set %response.ContentType = "application/json"
 
 	if $data(data),$isobject(data) {
-		quit data.%ToJSON()
+    if data.%IsA("%ZEN.proxyObject") {
+  		quit data.%ToJSON()
+    } else {
+      write data.%ToJSON()
+      quit $$$OK
+    }
 	}
 
 	quit $$$OK
@@ -76,6 +84,14 @@ ClassMethod GetStatic(pName As %String = "") As %Status
         quit stream.OutputToDevice()
     }
     quit $$$OK
+}
+
+ClassMethod Ping() As %Status
+{
+  set result = {}
+  set result.ping = "pong"
+  set result.session = %session.SessionId
+  quit ..outputJSON(result)
 }
 
 ClassMethod DBList() As %Status

@@ -17,3 +17,5 @@ RUN ccontrol start $ISC_PACKAGE_INSTANCENAME quietly \
  | csession $ISC_PACKAGE_INSTANCENAME -UUSER \
 # Stop Caché instance
  && ccontrol stop $ISC_PACKAGE_INSTANCENAME quietly
+
+VOLUME [ "/opt/blocks" ]

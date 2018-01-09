@@ -74,6 +74,7 @@ module.exports = {
   },
   devServer: {
     inline: true,
+    host: '0.0.0.0',
     proxy: {
       '/rest': {
         target: `http://${db_host}:${db_port}/blocks`

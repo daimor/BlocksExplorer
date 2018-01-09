@@ -11,7 +11,7 @@ services:
       - "${CACHE_WEBPORT-57772}:57772"
       - "${CACHE_PORT-1972}:1972"
     volumes:
-      - ./cache:/opt/blocks
+      - ./cache/src:/opt/blocks/src
   web:
     build:
       context: web
@@ -21,8 +21,7 @@ services:
       - DB_HOST=db
       - DB_PORT=${CACHE_WEBPORT-57772}
     ports:
-      - "${WEB_PORT-80}:8080"
-    # command: cat /opt/app/node_modules/babel-traverse/README.md
+      - "${WEB_PORT-8080}:8080"
     volumes:
       - node_modules:/opt/app/node_modules
       - web_build:/opt/app/build
