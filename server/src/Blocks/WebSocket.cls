@@ -25,14 +25,13 @@ Method OnPreServer() As %Status
 
 Method Server() As %Status
 {
-    Set timeout=.5
+    Set timeout=.1
     set quit=0
-    set dataGN="",event=""
     #dim exception As %Exception.AbstractException
     Set len=32656
     while 'quit {
         try {
-            Set data=..Read(.len, .status, $select($isobject(event):0.1,1:timeout))
+            Set data=..Read(.len, .status, timeout)
             If $$$ISERR(status),$$$GETERRORCODE(status) = $$$CSPWebSocketClosed {
                 set quit=1
                 quit
@@ -65,7 +64,7 @@ Method SendBlocksData() As %Status
     set child = ..ChildPID
     set resName = ..ResourceName
 
-    set responseData = ##class(%ListOfDataTypes).%New()
+    set responseData = ##class(%DynamicArray).%New()
     kill blocksData
     set countData=0
     set atEnd=0
@@ -79,30 +78,29 @@ Method SendBlocksData() As %Status
         set $listbuild(parent,block,global,fill)=data
         if $p(..Event,"_",2)="tree" {
             if '$data(blocksData(parent)) {
-                set blocksData(parent)=##class(%ZEN.proxyObject).%New()
+                set blocksData(parent)=##class(%DynamicObject).%New()
                 set blocksData(parent).block = parent
-                set blocksData(parent).child = ##class(%ListOfDataTypes).%New()
-                do responseData.Insert(blocksData(parent))
+                set blocksData(parent).child = ##class(%DynamicArray).%New()
+                do responseData.%Push(blocksData(parent))
             }
-            do blocksData(parent).child.Insert(block)
+            do blocksData(parent).child.%Push(block)
         } else {
             if '$data(blocksData(global)) {
-                set blocksData(global)=##class(%ZEN.proxyObject).%New()
+                set blocksData(global)=##class(%DynamicObject).%New()
                 set blocksData(global).global = global
-                set blocksData(global).blocks = ##class(%ListOfDataTypes).%New()
-                do responseData.Insert(blocksData(global))
+                set blocksData(global).blocks = ##class(%DynamicArray).%New()
+                do responseData.%Push(blocksData(global))
             }
-            set blockInfo = ##class(%ListOfDataTypes).%New()
-            do blockInfo.Insert(block)
-            do blockInfo.Insert(fill)
-            do blocksData(global).blocks.Insert(blockInfo)
+            set blockInfo = ##class(%DynamicArray).%New()
+            do blockInfo.%Push(block)
+            do blockInfo.%Push(fill)
+            do blocksData(global).blocks.%Push(blockInfo)
             kill blockInfo
         }
         quit:$i(countData)>=1000
 	}
-
     if responseData.Size > 0 {
-        do ..Write(..Event, responseData)
+      do ..Write(..Event, responseData)
     }
     if atEnd {
         set ..Event = ""
@@ -111,13 +109,14 @@ Method SendBlocksData() As %Status
     quit $$$OK
 }
 
-Method Action(obj As %ZEN.proxyObject) As %Status
+Method Action(obj As %DynamicObject) As %Status
 {
     set st = $$$OK
     #dim exception As %Exception.AbstractException
     try {
+      quit:obj=""
         set action = obj.event
-        set data = ##class(%ListOfDataTypes).%New()
+        set data = ##class(%DynamicArray).%New()
         if action="ping" {
             set sc=..Write(action, "pong")
         } elseif $p(action,"_")="blocks" {
@@ -228,7 +227,7 @@ ClassMethod ReadBlocks(aAsTree As %Boolean = 0, aBlockId As %Integer = 3, aParen
 add(parentBlock,blockId,global,offset)
     set data=$listbuild(parentBlock,blockId)
     if 'aAsTree set data=data_$listbuild(global,$j(offset/blockSize*100,0,0))
- 	do $system.Event.Signal(ResourceName, data)
+ 	  do $system.Event.Signal(ResourceName, data)
 }
 
 /// Reads up to len characters from the client.
@@ -238,8 +237,13 @@ Method Read(ByRef len As %Integer = 32656, ByRef sc As %Status, timeout As %Inte
 {
     Set json = ##super(len, .sc, timeout)
     Do:$$$ISERR(sc) ..EndServer()
-    Set st = ##class(%ZEN.Auxiliary.jsonProvider).%ConvertJSONToObject(json,,.obj,1)
-    Do:$$$ISERR(st) ..EndServer()
+    quit:json="" ""
+    try {
+      set obj = ##class(%DynamicObject).%FromJSON(json)
+    } catch ex {
+      set sc = ex.AsStatus()
+      set obj = ""
+    }
     Quit obj
 }
 
@@ -248,49 +252,12 @@ Method Write(eventName As %String = "", data As %String) As %Status
     if '$d(data) {
         quit ##super(eventName)
     }
-    set response = ##class(%ZEN.proxyObject).%New()
+    set response = ##class(%DynamicObject).%New()
     set response.event = eventName
     set response.data = data
 
-    Quit ##super(..OutputToStr(response,"%ToJSON"))
-}
-
-ClassMethod OutputToStr(obj, method, args...) As %String [ ProcedureBlock = 0 ]
-{
-    Set str=""
-    //Redirect IO to the current routine - makes use of the labels defined below
-    Use $io::("^"_$ZNAME)
-
-    //Enable redirection
-    Do ##class(%Device).ReDirectIO(1)
-
-    if $isobject(obj) {
-        Do $Method(obj,method,args...)
-    } elseif $$$comClassDefined(obj) {
-        Do $ClassMethod(obj,method,args...)
-    }
-
-    //Disable redirection
-    Do ##class(%Device).ReDirectIO(0)
-    Quit str
-    //Labels that allow for IO redirection
-    //Read Character - we Don't care about reading
-rchr(c)      quit
-    //Read a string - we Don't care about reading
-rstr(sz,to)  quit
-    //Write a character - call the output label
-wchr(s)      Do output($char(s))  quit
-    //Write a form feed - call the output label
-wff()        Do output($char(12))  quit
-    //Write a newline - call the output label
-wnl()        Do output($char(13,10))  quit
-    //Write a string - call the output label
-wstr(s)      Do output(s)  quit
-    //Write a tab - call the output label
-wtab(s)      Do output($char(9))  quit
-    //Output label - this is where you would handle what you actually want to Do.
-    //  in our case, we want to Write to str
-output(s)    Set str=str_s   quit
+    set json = response.%ToJSON()
+    quit ##super(json)
 }
 
 }

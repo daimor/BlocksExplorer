@@ -36,7 +36,7 @@ socket.send( 'some_event', {name: 'ismael', message : 'Hello world'} );
 */
 
 export class FancyWebSocket {
-  
+
   constructor(url) {
     this.conn = new WebSocket(url)
 
@@ -47,6 +47,7 @@ export class FancyWebSocket {
     }
 
     this.conn.onclose = () => {
+      console.log('WebSocket Connection closed');
       this.dispatch('close', null)
     }
     this.conn.onopen = () => {
@@ -54,6 +55,12 @@ export class FancyWebSocket {
     }
 
     this.callbacks = {}
+
+    this.bind('ping', function() {
+      console.log('pong');
+    });
+
+
   }
 
   dispatch(event_name, message) {

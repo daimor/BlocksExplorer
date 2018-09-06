@@ -1,0 +1,17 @@
+ARG IRIS_VERSION=2018.1
+FROM daimor/intersystems-iris:${IRIS_VERSION}
+
+WORKDIR /opt/blocks
+
+COPY ./src/ ./src
+
+RUN iris start $ISC_PACKAGE_INSTANCENAME quietly \
+ && /bin/echo -e "do ##class(%SYSTEM.OBJ).Load(\"/opt/blocks/src/DevInstaller.cls\",\"cdk\")\n" \
+                 "set sc=##class(Blocks.DevInstaller).setupWithVars(\"/opt/blocks/\")\n" \
+                 "do:'sc \$zu(4,\$j,1)\n" \
+                 "Halt\n" \
+  | iris session ${ISC_PACKAGE_INSTANCENAME} \
+ && iris stop $ISC_PACKAGE_INSTANCENAME quietly
+
+VOLUME [ "/opt/blocks/db" ]
+

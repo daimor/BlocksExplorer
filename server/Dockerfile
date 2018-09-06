@@ -5,9 +5,6 @@ WORKDIR /opt/blocks
 
 COPY ./src/ ./src
 
-ARG CACHE_KEY=
-RUN echo -e "${CACHE_KEY}" > /opt/cache/mgr/cache.key
-
 RUN ccontrol start $ISC_PACKAGE_INSTANCENAME quietly \
  && echo -e "" \
  "do ##class(%SYSTEM.OBJ).Load(\"/opt/blocks/src/DevInstaller.cls\",\"cdk\")\n" \
@@ -18,4 +15,4 @@ RUN ccontrol start $ISC_PACKAGE_INSTANCENAME quietly \
 # Stop Caché instance
  && ccontrol stop $ISC_PACKAGE_INSTANCENAME quietly
 
-VOLUME [ "/opt/blocks" ]
+VOLUME [ "/opt/blocks/db" ]

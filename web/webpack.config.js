@@ -1,13 +1,14 @@
-'use strict'
+'use strict';
 var webpack = require('webpack');
 var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
-const db_host = process.env['DB_HOST'] || 'localhost'
-const db_port = process.env['DB_PORT'] || 57772
+const db_host = process.env['DB_HOST'] || 'localhost';
+const db_port = process.env['DB_PORT'] || 57772;
 
 module.exports = {
+  mode: 'development',
   entry: './js/main.js',
   devtool: 'source-map',
   output: {
@@ -18,51 +19,62 @@ module.exports = {
   },
   module: {
     rules: [
-      {
-        test: /\.js$/,
-        exclude: /(node_modules|bower_components)/,
-        loader: 'babel-loader'
-      },
+      //     {
+      //       test: /\.js$/,
+      //       exclude: /(node_modules|bower_components)/,
+      //       loader: 'babel-loader'
+      //     },
       {
         test: /\.scss$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: ['css-loader', 'postcss-loader', 'sass-loader']
+        use: [
+          {
+            loader: 'style-loader' // creates style nodes from JS strings
+          },
+          {
+            loader: 'css-loader' // translates CSS into CommonJS
+          },
+          {
+            loader: 'sass-loader' // compiles Sass to CSS
+          }
+        ]
+      }
+      //     {
+      //       test: /\.css$/,
+      //       use: ExtractTextPlugin.extract({
+      //         fallback: 'style-loader',
+      //         use: ['css-loader', 'postcss-loader']
 
-        })
-      },
-      {
-        test: /\.css$/,
-        use: ExtractTextPlugin.extract({
-          fallback: 'style-loader',
-          use: ['css-loader', 'postcss-loader']
-
-        })
-      },
-      {
-        test: /\.html$/,
-        loader: 'html-loader'
-      },
+      //       })
+      //     },
+      //     {
+      //       test: /\.html$/,
+      //       loader: 'html-loader'
+      //     },
     ]
   },
+  optimization: {
+    splitChunks: {
+      chunks: 'all'
+    }
+  },
   plugins: [
-    new ExtractTextPlugin({
-      filename: 'styles.css',
-      allChunks: true
-    }),
+    // new ExtractTextPlugin({
+    //   filename: 'styles.css',
+    //   allChunks: true
+    // }),
     new HtmlWebpackPlugin({
       template: './index.html',
       chunksSortMode: 'dependency'
-    }),
-    new webpack.optimize.CommonsChunkPlugin({
-      name: ['main']
-    }),
-    new webpack.optimize.CommonsChunkPlugin({
-      minChunks: Infinity,
-      name: 'inline',
-      filename: 'inline.js',
-      sourceMapFilename: 'inline.map'
     })
+    // new webpack.optimize.CommonsChunkPlugin({
+    //   name: ['main']
+    // }),
+    // new webpack.optimize.CommonsChunkPlugin({
+    //   minChunks: Infinity,
+    //   name: 'inline',
+    //   filename: 'inline.js',
+    //   sourceMapFilename: 'inline.map'
+    // })
   ],
   node: {
     fs: 'empty',
@@ -74,9 +86,7 @@ module.exports = {
   },
   devServer: {
     inline: true,
-    allowedHosts: [
-      'blocks.localtest.me'
-    ],
+    allowedHosts: ['blocks.localtest.me'],
     proxy: {
       '/rest': {
         target: `http://${db_host}:${db_port}/blocks`

@@ -8,13 +8,14 @@ XData setup [ XMLNamespace = INSTALLER ]
   <Default Name="APPDATA" Dir="${FOLDER}src" />
   <Default Name="NAMESPACE" Value="BLOCKS" />
   <Default Name="DBNAME" Value="BLOCKS" />
-  <Default Name="DBPATH" Dir="${FOLDER}data" />
+  <Default Name="DBPATH" Dir="${FOLDER}db/data" />
   <Default Name="CSPAPP" Value="/blocks" />
+  <Default Name="CSPAPPWS" Value="/csp/blocks" />
   <Default Name="CSPAPPDIR" Dir="${FOLDER}web" />
 
   <!-- TEST Temp DB -->
   <Default Name="TESTDB" Value="TEST" />
-  <Default Name="TESTDBPATH" Dir="${FOLDER}test" />
+  <Default Name="TESTDBPATH" Dir="${FOLDER}db/test" />
 
   <Namespace Name="${NAMESPACE}" Ensemble="false" Create="yes" Code="${DBNAME}" Data="${DBNAME}">
     <Configuration>
@@ -29,6 +30,11 @@ XData setup [ XMLNamespace = INSTALLER ]
       CookiePath="/"
       EventClass="Blocks.SessionHandler"
       IsNamespaceDefault="1" />
+    <CSPApplication
+      Url="${CSPAPPWS}"
+      Directory="${CSPAPPDIR}"
+      CookiePath="/"
+      IsNamespaceDefault="1" />
   </Namespace>
   <Namespace Name="${CURRENTNS}">
     <Invoke Class="${CURRENTCLASS}" Method="SetDispatchClass" CheckStatus="true">
@@ -40,30 +46,20 @@ XData setup [ XMLNamespace = INSTALLER ]
 </Manifest>
 }
 
-ClassMethod setupWithVars(
-  pRootDir As %String = ""
-)
+ClassMethod setupWithVars(pRootDir As %String = "")
 {
   set vars("FOLDER") = ##class(%File).NormalizeDirectory(pRootDir)
   quit ..setup(.vars)
 }
 
-ClassMethod setup(
-  ByRef pVars,
-  pLogLevel As %Integer = 3,
-  pInstaller As %Installer.Installer,
-  pLogger As %Installer.AbstractLogger
-) As %Status [ codemode = objectgenerator ]
+ClassMethod setup(ByRef pVars, pLogLevel As %Integer = 3, pInstaller As %Installer.Installer, pLogger As %Installer.AbstractLogger) As %Status [ CodeMode = objectgenerator ]
 {
   do %code.WriteLine($c(9)_"set pVars(""CURRENTCLASS"")="""_%classname_"""")
   do %code.WriteLine($c(9)_"set pVars(""CURRENTNS"")=$namespace")
   quit ##class(%Installer.Manifest).%Generate(%compiledclass, %code, "setup")
 }
 
-ClassMethod SetDispatchClass(
-  pCSPName As %String = "",
-  pDispatchClass As %String = ""
-) As %Status
+ClassMethod SetDispatchClass(pCSPName As %String = "", pDispatchClass As %String = "") As %Status
 {
   new $namespace
   znspace "%SYS"

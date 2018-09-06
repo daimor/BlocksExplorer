@@ -10,14 +10,17 @@ XData UrlMap
     <Route Url="(?:/rest)?/ping" Method="GET" Call="Ping"/>
     <Route Url="(?:/rest)?/block/:block" Method="GET" Call="BlockInfo"/>
     <Route Url="(?:/rest)?/block/:block" Method="POST" Call="BlockInfo"/>
-    <Route Url="/websocket" Method="GET" Call="WebSocket"/>
     <Route Url="/((?!rest/).*)" Method="GET" Call="GetStatic"/>
 </Routes>
 }
 
-ClassMethod WebSocket() As %Status
+ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue As %Boolean) As %Status
 {
-    quit ##class(Blocks.WebSocket).Page()
+  if pUrl = "/websocket" {
+    set pContinue = 0
+    set %response.ServerSideRedirect = "/csp/blocks/Blocks.WebSocket.cls"
+  }
+  Quit $$$OK
 }
 
 ClassMethod outputJSON(data)

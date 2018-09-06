@@ -4,8 +4,7 @@ FROM node:slim
 
 WORKDIR /opt/app
 
-COPY package.json .
-COPY .npmrc .
+COPY package.json package-lock.json ./
 
 RUN npm install
 
