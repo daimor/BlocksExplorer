@@ -5,7 +5,7 @@ services:
     build:
       context: server
       args:
-        CACHE_VERSION: ${CACHE_VERSION}
+        CACHE_VERSION: ${CACHE_VERSION-2017.1}
     ports:
       - "${CACHE_WEBPORT-57772}:57772"
       - "${CACHE_PORT-1972}:1972"

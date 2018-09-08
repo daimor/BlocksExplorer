@@ -15,6 +15,24 @@ Database Blocks Explorer for InterSystems Caché
 + Shows every block with the same colour for every globals;
 + Legend for globals;
 
+#### Run with Docker
+You need license key for Caché or IRIS on RedHat systems.
+##### Caché
+```
+docker run -d --name cacheblocksexplorer --rm \
+       -p 52773:52773 \
+       -v /opt/some/database/for/test:/opt/blocks/db/test \
+       -v ~/cache.key:/usr/cachesys/mgr/cache.key
+       daimor/cacheblocksexplorer:cache
+```
+##### IRIS
+```
+docker run -d --name cacheblocksexplorer --rm \
+       -p 57772:57772 \
+       -v /opt/some/database/for/test:/opt/blocks/db/test \
+       -v ~/iris.key:/usr/irissys/mgr/iris.key
+       daimor/cacheblocksexplorer:iris
+```
 
 ## Screenshots
 

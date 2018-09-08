@@ -2,7 +2,6 @@
 var webpack = require('webpack');
 var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
-var ExtractTextPlugin = require('extract-text-webpack-plugin');
 
 const db_host = process.env['DB_HOST'] || 'localhost';
 const db_port = process.env['DB_PORT'] || 57772;
