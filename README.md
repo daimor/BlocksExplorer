@@ -1,5 +1,5 @@
-# Caché Blocks Explorer
-Database Blocks Explorer for InterSystems Caché
+# Blocks Explorer
+Database Blocks Explorer for InterSystems IRIS/Caché
 
 #### Key features
 ##### Tree explorer
