@@ -1,0 +1,9 @@
+{
+  "objectscript.conn": {
+    "active": true,
+    "ns": "BLOCKS",
+    "docker-compose": {
+      "service": "server"
+    }
+  }
+}

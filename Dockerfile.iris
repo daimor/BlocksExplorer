@@ -10,7 +10,13 @@ RUN npm install \
 
 FROM store/intersystems/iris-community:2020.1.0.202.0
 
-WORKDIR /opt/blocks/
+WORKDIR /opt/blocks
+
+USER root
+
+RUN chown ${ISC_PACKAGE_MGRUSER}:${ISC_PACKAGE_IRISGROUP} ${PWD}
+
+USER irisowner
 
 COPY ./server/src/ ./src
 COPY --from=web /opt/blocks/build/ /usr/irissys/csp/blocks/

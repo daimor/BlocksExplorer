@@ -1,0 +1,22 @@
+name: CI
+on:
+  - push
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        variant: [
+          "cache",
+          "iris"
+        ]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Login to Docker Registry
+        run: docker login --username $DOCKER_USERNAME --password $DOCKER_PASSWORD
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push
+        run: make ${{ matrix.variant }}
