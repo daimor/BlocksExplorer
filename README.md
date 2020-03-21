@@ -19,19 +19,18 @@ Database Blocks Explorer for InterSystems Caché
 You need license key for Caché or IRIS on RedHat systems.
 ##### Caché
 ```
-docker run -d --name cacheblocksexplorer --rm \
+docker run -d --name blocksexplorer --rm \
        -p 52773:52773 \
        -v /opt/some/database/for/test:/opt/blocks/db/test \
        -v ~/cache.key:/usr/cachesys/mgr/cache.key
-       daimor/cacheblocksexplorer:cache
+       daimor/blocksexplorer:cache
 ```
 ##### IRIS
 ```
-docker run -d --name cacheblocksexplorer --rm \
+docker run -d --name blocksexplorer --rm \
        -p 57772:57772 \
        -v /opt/some/database/for/test:/opt/blocks/db/test \
-       -v ~/iris.key:/usr/irissys/mgr/iris.key
-       daimor/cacheblocksexplorer:iris
+       daimor/blocksexplorer:iris
 ```
 
 ## Screenshots

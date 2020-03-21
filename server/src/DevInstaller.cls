@@ -28,12 +28,6 @@ XData setup [ XMLNamespace = INSTALLER ]
       Url="${CSPAPP}"
       Directory="${CSPAPPDIR}"
       CookiePath="/"
-      EventClass="Blocks.SessionHandler"
-      IsNamespaceDefault="1" />
-    <CSPApplication
-      Url="${CSPAPPWS}"
-      Directory="${CSPAPPDIR}"
-      CookiePath="/"
       IsNamespaceDefault="1" />
   </Namespace>
   <Namespace Name="${CURRENTNS}">
@@ -65,6 +59,8 @@ ClassMethod SetDispatchClass(pCSPName As %String = "", pDispatchClass As %String
   znspace "%SYS"
   set props("DispatchClass")=pDispatchClass
   set props("Recurse")=1
+  set props("AutheEnabled") = 64
+  set props("MatchRoles") = ":%ALL"
   d ##class(Security.Applications).Modify(pCSPName,.props)
   quit $$$OK
 }

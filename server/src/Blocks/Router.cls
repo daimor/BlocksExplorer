@@ -6,6 +6,7 @@ Class Blocks.Router Extends %CSP.REST
 XData UrlMap
 {
 <Routes>
+    <Route Url="(?:/rest)?/websocket" Method="GET" Call="WebSocket"/>
     <Route Url="(?:/rest)?/dblist" Method="GET" Call="DBList"/>
     <Route Url="(?:/rest)?/ping" Method="GET" Call="Ping"/>
     <Route Url="(?:/rest)?/block/:block" Method="GET" Call="BlockInfo"/>
@@ -14,13 +15,10 @@ XData UrlMap
 </Routes>
 }
 
-ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue As %Boolean) As %Status
+ClassMethod WebSocket() As %Status
 {
-  if pUrl = "/websocket" {
-    set pContinue = 0
-    set %response.ServerSideRedirect = "/csp/blocks/Blocks.WebSocket.cls"
-  }
-  Quit $$$OK
+  Do ##class(%Library.Device).ReDirectIO(0)
+  Quit ##class(Blocks.WebSocket).Page(0)
 }
 
 ClassMethod outputJSON(data)

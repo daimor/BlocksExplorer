@@ -1,5 +1,5 @@
-import $ from 'jquery';
-import joint from 'jointjs'
+var $ = require('jquery');
+var joint = require('jointjs');
 require('./joint.shapes.blocks')
 
 export class BlocksViewer {

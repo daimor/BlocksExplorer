@@ -1,5 +1,5 @@
-import $ from 'jquery';
-import joint from 'jointjs'
+var $ = require('jquery');
+var joint = require('jointjs');
 var V = joint.V
 
 joint.shapes.blocks = {}
@@ -198,36 +198,6 @@ joint.shapes.blocks.Block = joint.shapes.devs.Model.extend(_.extend({}, joint.sh
     this.attributes.size.width = this.defaults.size.width
     this.attributes.attrs.rect.width = this.defaults.size.width
   },
-
-  updatePortsAttrs: function () {
-    var currAttrs = this.get('attrs')
-    _.each(this._portSelectors, function (selector) {
-      if (currAttrs[selector]) delete currAttrs[selector]
-    })
-
-    this._portSelectors = []
-
-    var attrs = {}
-
-    _.each(this.get('extPorts'), function (portName, index, ports) {
-      var portAttributes = this.getPortAttrs(portName, index, 1, '.' + portName + 'Port', 'ext')
-      this._portSelectors = this._portSelectors.concat(_.keys(portAttributes))
-      _.extend(attrs, portAttributes)
-    }, this)
-
-    _.each(this.get('outPorts'), function (portName, index, ports) {
-      var portAttributes = this.getPortAttrs(portName, index, ports.length, '.outPorts', 'out')
-      this._portSelectors = this._portSelectors.concat(_.keys(portAttributes))
-      _.extend(attrs, portAttributes)
-    }, this)
-
-    this.attr(attrs, {
-      silent: true
-    })
-    this.processPorts()
-    this.trigger('process:ports')
-  },
-
   getPortAttrs: function (portName, index, total, selector, type) {
     var attrs = {}
 
@@ -273,6 +243,36 @@ joint.shapes.blocks.Block = joint.shapes.devs.Model.extend(_.extend({}, joint.sh
     }
 
     return attrs
+  },
+  updatePortsAttrs: function () {
+    var self = this;
+    var currAttrs = this.get('attrs')
+    this._portSelectors = this._portSelectors || [];
+    this._portSelectors.forEach((selector) => {
+      if (currAttrs[selector]) delete currAttrs[selector]
+    })
+
+    this._portSelectors = []
+
+    var attrs = {}
+
+    this.get('extPorts').forEach((portName, index, ports) => {
+      var portAttributes = self.getPortAttrs(portName, index, 1, '.' + portName + 'Port', 'ext')
+      self._portSelectors = self._portSelectors.concat(_.keys(portAttributes))
+      _.extend(attrs, portAttributes)
+    })
+
+    this.get('outPorts').forEach((portName, index, ports) => {
+      var portAttributes = this.getPortAttrs(portName, index, ports.length, '.outPorts', 'out')
+      this._portSelectors = this._portSelectors.concat(_.keys(portAttributes))
+      _.extend(attrs, portAttributes)
+    })
+
+    this.attr(attrs, {
+      silent: true
+    })
+    this.processPorts()
+    this.trigger('process:ports')
   }
 }))
 
@@ -301,10 +301,10 @@ joint.shapes.blocks.Link = joint.dia.Link.extend({
 
 joint.shapes.blocks.BlockView = joint.dia.ElementView.extend(_.extend({}, joint.shapes.basic.PortsViewInterface, {
   renderPorts: function () {
-    
+
     var $extPorts = this.$('.extPorts').empty()
     var $outPorts = this.$('.outPorts').empty()
-    
+
     var portTemplate = _.template(this.model.portMarkup)
 
     _.each(_.filter(this.model.ports, function (p) {

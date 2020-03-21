@@ -1,4 +1,4 @@
-ARG CACHE_VERSION=2017.2
+ARG CACHE_VERSION=2018.1
 FROM node:8-alpine AS web
 
 WORKDIR /opt/blocks/

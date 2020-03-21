@@ -1,17 +1,28 @@
-ARG IRIS_VERSION=2018.1
-FROM daimor/intersystems-iris:${IRIS_VERSION}
+ARG IRIS_VERSION=2020.1.0.202.0
+FROM store/intersystems/iris-community:${IRIS_VERSION}
 
 WORKDIR /opt/blocks
 
+USER root
+
+RUN chown ${ISC_PACKAGE_MGRUSER}:${ISC_PACKAGE_IRISGROUP} ${PWD}
+
+USER irisowner
+
 COPY ./src/ ./src
 
-RUN iris start $ISC_PACKAGE_INSTANCENAME quietly \
- && /bin/echo -e "do ##class(%SYSTEM.OBJ).Load(\"/opt/blocks/src/DevInstaller.cls\",\"cdk\")\n" \
+RUN iris start $ISC_PACKAGE_INSTANCENAME quietly && \
+    /bin/echo -e "" \
+                 "do ##class(%SYSTEM.OBJ).Load(\"/opt/blocks/src/DevInstaller.cls\",\"cdk\")\n" \
                  "set sc=##class(Blocks.DevInstaller).setupWithVars(\"/opt/blocks/\")\n" \
                  "do:'sc \$zu(4,\$j,1)\n" \
-                 "Halt\n" \
-  | iris session ${ISC_PACKAGE_INSTANCENAME} \
- && iris stop $ISC_PACKAGE_INSTANCENAME quietly
+                 "do INT^JRNSTOP kill ^%SYS(\"Journal\")\n" \
+                 "do ##class(Security.Users).UnExpireUserPasswords(\"*\")\n" \
+                 "halt" \
+    | iris session $ISC_PACKAGE_INSTANCENAME -U%SYS && \
+    iris stop $ISC_PACKAGE_INSTANCENAME quietly && \
+    rm $ISC_PACKAGE_INSTALLDIR/mgr/IRIS.WIJ && \
+    rm $ISC_PACKAGE_INSTALLDIR/mgr/journal/*
 
 VOLUME [ "/opt/blocks/db" ]
 

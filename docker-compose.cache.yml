@@ -1,0 +1,17 @@
+version: "2.4"
+
+services:
+  server:
+    build:
+      context: server
+      args:
+        CACHE_VERSION: ${CACHE_VERSION-2017.1}
+    ports:
+      - "${CACHE_WEBPORT-57772}:57772"
+      - "${CACHE_PORT-1972}:1972"
+    volumes:
+      - ~/cache.key:/usr/cachesys/mgr/cache.key
+      - ./server/src:/opt/blocks/src
+  web:
+    environment:
+      - DB_PORT=57772
