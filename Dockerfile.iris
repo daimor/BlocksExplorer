@@ -14,7 +14,10 @@ WORKDIR /opt/blocks
 
 USER root
 
-RUN chown ${ISC_PACKAGE_MGRUSER}:${ISC_PACKAGE_IRISGROUP} ${PWD}
+RUN chown ${ISC_PACKAGE_MGRUSER}:${ISC_PACKAGE_IRISGROUP} ${PWD} && \
+ apt-get -y update && \
+ DEBIAN_FRONTEND=noninteractive apt-get -y install imagemagick --no-install-recommends && \
+ rm -rf /var/lib/apt/lists/*
 
 USER irisowner
 
@@ -30,3 +33,7 @@ RUN iris start $ISC_PACKAGE_INSTANCENAME quietly \
   && iris stop $ISC_PACKAGE_INSTANCENAME quietly
 
 VOLUME [ "/opt/blocks/db" ]
+
+COPY entrypoint.sh /
+
+ENTRYPOINT [ "/entrypoint.sh" ]

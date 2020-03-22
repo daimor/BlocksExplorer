@@ -5,6 +5,8 @@ services:
     extends:
       file: docker-compose.${MODE:-iris}.yml
       service: server
+    volumes:
+      - ./out:/opt/blocks/out
   web:
     extends:
       file: docker-compose.${MODE:-iris}.yml

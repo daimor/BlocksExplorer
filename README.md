@@ -25,6 +25,14 @@ docker run -d --name blocksexplorer --rm \
        -v ~/cache.key:/usr/cachesys/mgr/cache.key \
        daimor/blocksexplorer:cache
 ```
+Generate blocks map as image file in `out` directory
+```
+docker run -it --rm \
+       -v /opt/some/database/for/test:/opt/blocks/db/test \
+       -v `pwd`out:/opt/blocks/out \
+       daimor/blocksexplorer:cache generate
+```
+
 ##### IRIS
 ```
 docker run -d --name blocksexplorer --rm \
@@ -32,6 +40,15 @@ docker run -d --name blocksexplorer --rm \
        -v /opt/some/database/for/test:/opt/blocks/db/test \
        daimor/blocksexplorer:iris
 ```
+
+Generate blocks map as image file in `out` directory
+```
+docker run -it --rm \
+       -v /opt/some/database/for/test:/opt/blocks/db/test \
+       -v `pwd`out:/opt/blocks/out \
+       daimor/blocksexplorer:iris generate
+```
+
 
 #### Development mode
 Run with docker-compose, will start web part with hot reloading.
