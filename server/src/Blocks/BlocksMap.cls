@@ -3,7 +3,7 @@ Class Blocks.BlocksMap
 
 Parameter DefaultOutputFolder = "/opt/blocks/out/";
 
-ClassMethod Generate(aDirectory = "", pOutputFolder = {..#DefaultOutputFolder}) As %Status
+ClassMethod Generate(aDirectory = "", pOutputFolder = {..#DefaultOutputFolder}, cellSize = 1, cellSpace = 0, showFill = 0) As %Status
 {
   If '##class(%File).DirectoryExists(pOutputFolder) {
     Quit $$$ERROR($$$GeneralError, "OutputFolder must exist")
@@ -11,16 +11,19 @@ ClassMethod Generate(aDirectory = "", pOutputFolder = {..#DefaultOutputFolder}) 
 
   Set tSC = ..GenerateMap(aDirectory)
   If $$$ISERR(tSC) {
+    Do $System.OBJ.DisplayError(tSC)
     Quit tSC
   }
 
-  Set tSC = ..DrawMap(.pOutputFolder)
+  Set tSC = ..DrawMap(.pOutputFolder, cellSize, cellSpace, showFill)
   If $$$ISERR(tSC) {
+    Do $System.OBJ.DisplayError(tSC)
     Quit tSC
   }
 
   Set tSC = ..ConvertMap(.pOutputFolder)
   If $$$ISERR(tSC) {
+    Do $System.OBJ.DisplayError(tSC)
     Quit tSC
   }
   Quit $$$OK
@@ -36,10 +39,11 @@ ClassMethod ConvertMap(pOutputFolder = {..#DefaultOutputFolder}) As %Status
   Quit $$$OK
 }
 
-ClassMethod DrawMap(pOutputFolder = {..#DefaultOutputFolder}) As %Status
+ClassMethod DrawMap(pOutputFolder = {..#DefaultOutputFolder}, cellSize = 1, cellSpace = 0, showFill = 0) As %Status
 {
   Set mapGN = $Name(^||BlocksMap)
   Do ..initColors()
+  Set cellSpace = $System.SQL.CEILING(cellSpace / 2) * 2
 
   Set fileName = ##class(%File).NormalizeFilename("BlocksMap.bmp", pOutputFolder)
   Do ##class(%File).Delete(fileName)
@@ -50,22 +54,19 @@ ClassMethod DrawMap(pOutputFolder = {..#DefaultOutputFolder}) As %Status
 
   Set $Listbuild(blocks, size) = $Get(@mapGN)
 
-  Set cellSize = 20
-  Set cellSpace = 2
-
   Set width = size * ( cellSize + cellSpace )
   Set height = width
 
-  Set bfSize = 14 + 40 + (3*width*height)
+  Set bytesPerPixel = 3
   Set bfOffBits = 54
+
+  Set bfSize = bfOffBits + (bytesPerPixel*width*height)
   Set fileHeader = ""
     _ "BM"                    // WORD    bfType
     _ ..justify(bfSize, 4)    // DWORD   bfSize
     _ ..justify(0, 2)         // WORD    bfReserved1
     _ ..justify(0, 2)         // WORD    bfReserved2
     _ ..justify(bfOffBits, 4) // DWORD   bfOffBits
-
-  Set bytesPerPixel = 3
 
   Set biSize = 40
   Set biWidth = width
@@ -100,7 +101,7 @@ ClassMethod DrawMap(pOutputFolder = {..#DefaultOutputFolder}) As %Status
   For y=biHeight:-1:1 {
     Set line = ""
     For x=1:1:biWidth {
-      Set $Listbuild(red, green, blue) = ..getColor(y, x, size, cellSize, cellSpace)
+      Set $Listbuild(red, green, blue) = ..getColor(y, x, size, cellSize, cellSpace, showFill)
       Set color = ""
         _ ..justify(red, 1)
         _ ..justify(green, 1)
@@ -152,16 +153,21 @@ ClassMethod initColors() As %Status
   }
 }
 
-ClassMethod getColor(y, x, size, cellSize, cellSpace) As %List
+ClassMethod getColor(y, x, size, cellSize, cellSpace, showFill) As %List
 {
   Set mapGN = $Name(^||BlocksMap)
-  Set padding = cellSpace \ 2
+
+  Set padding = 0
+  Set spacing = 0
+  If cellSpace {
+    Set padding = cellSpace \ 2
+
+    Set spacing = (y <= padding) || (x <= padding)
+    Set spacing = spacing || (x # (cellSize + cellSpace) <= padding)
+    Set spacing = spacing || (y # (cellSize + cellSpace) <= padding)
+  }
   Set blockX = x - 1 \ (cellSize + cellSpace) + 1
   Set blockY = y - 1 \ (cellSize + cellSpace) + 1
-
-  Set spacing = (y <= padding) || (x <= padding)
-  Set spacing = spacing || (x # (cellSize + cellSpace) <= padding)
-  Set spacing = spacing || (y # (cellSize + cellSpace) <= padding)
 
   If spacing {
     Set red = 222
@@ -171,13 +177,15 @@ ClassMethod getColor(y, x, size, cellSize, cellSpace) As %List
   ElseIf $Data(@mapGN@("Map", blockY, blockX), blockInfo) {
     Set $Listbuild(globalNum, fill) = blockInfo
     Set $Listbuild(red, green, blue) = $Get(@mapGN@("Colors", globalNum))
-    Set fillSize = $System.SQL.CEILING(fill / 100 * cellSize) + 1
-    Set:fillSize<1 fillSize = 1
-    if ( y # (cellSize + cellSpace) > fillSize) {
-      Set alpha = 0.5
-      Set red = (1-alpha) * 255 + (alpha * red)
-      Set green = (1-alpha) * 255 + (alpha * green)
-      Set blue = (1-alpha) * 255 + (alpha * blue)
+    if (showFill) {
+      Set fillSize = $System.SQL.CEILING(fill / 100 * cellSize) + 1
+      Set:fillSize<1 fillSize = 1
+      if ( y # (cellSize + cellSpace) > fillSize) {
+        Set alpha = 0.5
+        Set red = (1-alpha) * 255 + (alpha * red)
+        Set green = (1-alpha) * 255 + (alpha * green)
+        Set blue = (1-alpha) * 255 + (alpha * blue)
+      }
     }
   }
   Else {

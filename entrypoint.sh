@@ -18,16 +18,31 @@ else
 fi
 
 if [ "${COMMAND,,}" = "generate" ]; then
-  if [ "$#" -lt 2 ]; then
-    DATABASE="/opt/blocks/db/test/"
-  else
-    DATABASE=$2
+  shift
+  re='^[0-9]+$'
+  if ! [[ "$1" =~ $re ]]; then
+    DATABASE=$1
+    shift
   fi
-  echo Database $DATABASE
+  OutputFolder=/out/
+  CellSize=${1:-1}
+  CellSpace=${2:-0}
+  ShowFill=${3:-0}
+  DATABASE=${DATABASE:-/db}
+
+  echo
   echo "Starting server..."
   $CCONTROL start $ISC_PACKAGE_INSTANCENAME quietly
+  echo
   echo "Generating image..."
-  $CCONTROL session $ISC_PACKAGE_INSTANCENAME -UBLOCKS "##class(Blocks.BlocksMap).Generate(\"$DATABASE\")"
+  echo "Database = \"$DATABASE\""
+  echo "OutputFolder = \"$OutputFolder\""
+  echo "CellSize = $CellSize"
+  echo "CellSpace = $CellSpace"
+  echo "ShowFill = $ShowFill"
+  rm ${OutputFolder}BlocksMap.{png,bmp}
+  $CCONTROL session $ISC_PACKAGE_INSTANCENAME -UBLOCKS "##class(Blocks.BlocksMap).Generate(\"$DATABASE\",\"${OutputFolder}\",\"${CellSize}\",\"${CellSpace}\",\"${ShowFill}\")"
+  echo
   echo "Stopping server..."
   $CCONTROL stop $ISC_PACKAGE_INSTANCENAME quietly
   echo "Finished"
