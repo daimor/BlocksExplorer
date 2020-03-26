@@ -1,9 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Export generator="Cache" version="25">
-<Document name="BlocksExplorer.MODULE"><Module>
+<Document name="BlocksExplorer.ZPM"><Module>
  <Name>BlocksExplorer</Name>
-  <Version>0.0.1</Version>
+  <Version>2.2.1</Version>
   <Packaging>module</Packaging>
-  <LifecycleClass>Blocks.Lifecycle</LifecycleClass>
+  <SourcesRoot>server/src</SourcesRoot>
+  <Resource Name="Blocks.PKG"/>
+  <CSPApplication
+    SourcePath="/web/build"
+    DeployPath="${cspdir}/blocks"
+    Url="/blocks"
+    CookiePath="/blocks/"
+    Recurse="1"
+    PasswordAuthEnabled="0"
+    UnauthenticatedEnabled="1"
+    MatchRoles=":%ALL"
+    DispatchClass="Blocks.Router"
+    />
 </Module>
 </Document></Export>
