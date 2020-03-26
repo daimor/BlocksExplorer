@@ -1,4 +1,4 @@
-ARG CACHE_VERSION=2017.2
+ARG CACHE_VERSION=2018.1
 FROM node:8-alpine AS web
 
 WORKDIR /opt/blocks/
@@ -12,6 +12,8 @@ RUN npm install \
 FROM daimor/intersystems-cache:${CACHE_VERSION}
 
 WORKDIR /opt/blocks
+
+RUN yum -y install ImageMagick
 
 COPY ./server/src/ ./src
 COPY --from=web /opt/blocks/build/ /usr/cachesys/csp/blocks/
@@ -27,3 +29,7 @@ RUN ccontrol start $ISC_PACKAGE_INSTANCENAME quietly \
  && ccontrol stop $ISC_PACKAGE_INSTANCENAME quietly
 
 VOLUME [ "/opt/blocks/db" ]
+
+COPY entrypoint.sh /
+
+ENTRYPOINT [ "/entrypoint.sh" ]

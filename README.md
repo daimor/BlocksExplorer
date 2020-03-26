@@ -1,5 +1,5 @@
-# Caché Blocks Explorer
-Database Blocks Explorer for InterSystems Caché
+# Blocks Explorer
+Database Blocks Explorer for InterSystems IRIS/Caché
 
 #### Key features
 ##### Tree explorer
@@ -19,20 +19,43 @@ Database Blocks Explorer for InterSystems Caché
 You need license key for Caché or IRIS on RedHat systems.
 ##### Caché
 ```
-docker run -d --name cacheblocksexplorer --rm \
-       -p 52773:52773 \
-       -v /opt/some/database/for/test:/opt/blocks/db/test \
-       -v ~/cache.key:/usr/cachesys/mgr/cache.key
-       daimor/cacheblocksexplorer:cache
-```
-##### IRIS
-```
-docker run -d --name cacheblocksexplorer --rm \
+docker run -d --name blocksexplorer --rm \
        -p 57772:57772 \
        -v /opt/some/database/for/test:/opt/blocks/db/test \
-       -v ~/iris.key:/usr/irissys/mgr/iris.key
-       daimor/cacheblocksexplorer:iris
+       -v ~/cache.key:/usr/cachesys/mgr/cache.key \
+       daimor/blocksexplorer:cache
 ```
+Generate blocks map as image file in `out` directory
+```
+docker run -it --rm \
+       -v /opt/some/database/for/test:/opt/blocks/db/test \
+       -v `pwd`out:/opt/blocks/out \
+       daimor/blocksexplorer:cache generate
+```
+
+##### IRIS
+```
+docker run -d --name blocksexplorer --rm \
+       -p 52773:52773 \
+       -v /opt/some/database/for/test:/opt/blocks/db/test \
+       daimor/blocksexplorer:iris
+```
+
+Generate blocks map as image file in `out` directory
+```
+docker run -it --rm \
+       -v /opt/some/database/for/test:/opt/blocks/db/test \
+       -v `pwd`out:/opt/blocks/out \
+       daimor/blocksexplorer:iris generate
+```
+
+
+#### Development mode
+Run with docker-compose, will start web part with hot reloading.
+```
+docker-compose up -d
+```
+By default running on 80 port. To start using it, just open http://localhost/
 
 ## Screenshots
 

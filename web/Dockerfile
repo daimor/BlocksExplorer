@@ -6,7 +6,7 @@ WORKDIR /opt/app
 
 COPY package.json package-lock.json ./
 
-RUN npm install
+RUN npm ci
 
 ENV PATH="$PATH:./node_modules/.bin"
 
