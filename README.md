@@ -53,7 +53,12 @@ docker run -it --rm \
 #### Development mode
 Run with docker-compose, will start web part with hot reloading.
 ```
-docker-compose up -d
+docker-compose up -d --build
+```
+It will start server base on IRIS
+To start on Caché use this command
+```
+MODE=cache docker-compose up -d --build
 ```
 By default running on 80 port. To start using it, just open http://localhost/
 

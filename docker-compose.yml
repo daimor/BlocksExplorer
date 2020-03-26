@@ -13,8 +13,6 @@ services:
       service: web
     build:
       context: web
-    links:
-      - server
     environment:
       - DB_HOST=server
       - WEB_PORT=${WEB_PORT-80}

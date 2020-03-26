@@ -7,8 +7,8 @@ services:
       args:
         CACHE_VERSION: ${CACHE_VERSION-2018.1}
     ports:
-      - "${CACHE_WEBPORT-57772}:57772"
-      - "${CACHE_PORT-1972}:1972"
+      - 57772
+      - 1972
     volumes:
       - ~/cache.key:/usr/cachesys/mgr/cache.key
       - ./server/src:/opt/blocks/src

@@ -6,10 +6,10 @@ services:
       context: server
       dockerfile: Dockerfile.iris
       args:
-        IRIS_VERSION: 2020.1.0.209.0
+        IRIS_VERSION: ${IRIS_VERSION:-2020.1.0.209.0}
     ports:
-      - "${IRIS_WEBPORT-52773}:52773"
-      - "${IRIS_PORT-51773}:51773"
+      - 52773
+      - 51773
     volumes:
       - ~/iris.key:/usr/irissys/mgr/iris.key
       - ./server/src:/opt/blocks/src
