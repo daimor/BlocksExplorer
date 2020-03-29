@@ -4,6 +4,9 @@
     "ns": "BLOCKS",
     "docker-compose": {
       "service": "server"
+    },
+    "links": {
+      "BlocksExplorer": "http://localhost/"
     }
   }
 }

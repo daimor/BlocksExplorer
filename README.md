@@ -64,5 +64,59 @@ By default running on 80 port. To start using it, just open http://localhost/
 
 ## Screenshots
 
-![Tree](https://cloud.githubusercontent.com/assets/1212251/9978584/f4964ada-5f40-11e5-8b23-2d20cb03e7b1.png)
-![Map](https://cloud.githubusercontent.com/assets/1212251/9978586/f967a3e2-5f40-11e5-82a4-8588d47340b5.png)
+![Tree](https://raw.githubusercontent.com/daimor/BlocksExplorer/master/images/TreeView.png)
+![Map](https://raw.githubusercontent.com/daimor/BlocksExplorer/master/images/MapView.png)
+
+## CLI mode
+
+Using prebuild docker image gives a way to generate a picture for any IRIS or Caché database.
+Use docker image `daimor/blocksexplorer:iris` for IRIS or `daimor/blocksexplorer:cache` for Caché Databases.
+Those images accepts command `generate` with arguments
+
+* path to the tested databases inside a container, by default `/db`, can be omited
+* cellSize - size of the cell in pixels, where each cell represents particular database's block, by default 1
+* cellSpace - sorrounding space between cell, by default 0
+* showFill - sign to show how much block fill by data, by default 0
+
+This tool generates a square picture in folder /out inside a container in formats BMP and PNG. 
+
+So, with command like this 
+```
+docker run -v `pwd`/out:/out daimor/blocksexplorer:iris generate 20 1 1
+```
+It will generate this picture for an empty database.  
+
+![TESTDB](https://raw.githubusercontent.com/daimor/BlocksExplorer/master/images/TESTDB_20_1_1.png)
+With a lighter color visible that most of the blocks just empty.  
+
+The same test empty database, but with showFill=0
+```
+docker run -v `pwd`/out:/out daimor/blocksexplorer:iris generate 20 1 0
+```
+Blocks have different colors but just for globals, and does not show how much it fill. 
+
+![TESTDB](https://raw.githubusercontent.com/daimor/BlocksExplorer/master/images/TESTDB_20_1_0.png)
+
+More examples  
+ENSLIB
+```
+docker run -v `pwd`/out:/out daimor/blocksexplorer:iris generate /usr/irissys/mgr/enslib 5 1
+```
+![ENSLIB](https://raw.githubusercontent.com/daimor/BlocksExplorer/master/images/ENSLIB_5_1_0.png)
+
+IRISSYS
+```
+docker run -v `pwd`/out:/out daimor/blocksexplorer:iris generate /usr/irissys/mgr/ 5 1 1
+```
+![IRISSYS](https://raw.githubusercontent.com/daimor/BlocksExplorer/master/images/IRISSYS_5_1_1.png)
+
+
+For large databases, would not recommend to use have too big cellSize.
+
+### Useful Links
+
+There you can find more about database internals, and how to use this tool.
+* [Internal Structure of Caché Database Blocks, Part 1](https://community.intersystems.com/post/internal-structure-cach%C3%A9-database-blocks-part-1)
+* [Internal Structure of Caché Database Blocks, Part 2](https://community.intersystems.com/post/internal-structure-cach%C3%A9-database-blocks-part-2)
+* [Internal Structure of Caché Database Blocks, Part 3](https://community.intersystems.com/post/internal-structure-cach%C3%A9-database-blocks-part-3)
+
