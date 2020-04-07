@@ -1,3 +1,5 @@
+![zpm](https://github.com/daimor/BlocksExplorer/workflows/zpm/badge.svg)
+
 # Blocks Explorer
 Database Blocks Explorer for InterSystems IRIS/Caché
 
