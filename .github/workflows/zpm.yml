@@ -8,4 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - uses: isc-zpm/actions@master
+      - uses: actions/setup-node@master
+        with:
+          node-version: '10.x'
+      - run: cd web && npm ci
+      - run: cd web && npm run build:prod
+      - name: zpm
+        uses: isc-zpm/actions@master
