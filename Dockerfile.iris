@@ -8,16 +8,16 @@ RUN npm install \
   && export PATH="$PATH:./node_modules/.bin" \
   && webpack --mode production
 
-FROM store/intersystems/iris-community:2020.1.0.209.0
+FROM containers.intersystems.com/intersystems/iris-community:2020.3.0.200.0
 
 WORKDIR /opt/blocks
 
 USER root
 
 RUN chown ${ISC_PACKAGE_MGRUSER}:${ISC_PACKAGE_IRISGROUP} ${PWD} && \
- apt-get -y update && \
- DEBIAN_FRONTEND=noninteractive apt-get -y install imagemagick --no-install-recommends && \
- rm -rf /var/lib/apt/lists/*
+    apt-get -y update && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install imagemagick --no-install-recommends && \
+    rm -rf /var/lib/apt/lists/*
 
 USER irisowner
 

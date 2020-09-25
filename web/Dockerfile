@@ -1,4 +1,4 @@
-FROM node:slim
+FROM node:12-slim
 
 # RUN apk update && apk add git
 
@@ -6,7 +6,7 @@ WORKDIR /opt/app
 
 COPY package.json package-lock.json ./
 
-RUN npm ci
+RUN npm install
 
 ENV PATH="$PATH:./node_modules/.bin"
 

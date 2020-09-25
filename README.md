@@ -31,7 +31,7 @@ Generate blocks map as image file in `out` directory
 ```
 docker run -it --rm \
        -v /opt/some/database/for/test:/opt/blocks/db/test \
-       -v `pwd`out:/opt/blocks/out \
+       -v `pwd`/out:/opt/blocks/out \
        daimor/blocksexplorer:cache generate
 ```
 
@@ -47,7 +47,7 @@ Generate blocks map as image file in `out` directory
 ```
 docker run -it --rm \
        -v /opt/some/database/for/test:/opt/blocks/db/test \
-       -v `pwd`out:/opt/blocks/out \
+       -v `pwd`/out:/opt/blocks/out \
        daimor/blocksexplorer:iris generate
 ```
 

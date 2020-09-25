@@ -24,7 +24,7 @@ if [ "${COMMAND,,}" = "generate" ]; then
     DATABASE=$1
     shift
   fi
-  OutputFolder=/out/
+  OutputFolder=/opt/blocks/out/
   CellSize=${1:-1}
   CellSpace=${2:-0}
   ShowFill=${3:-0}
