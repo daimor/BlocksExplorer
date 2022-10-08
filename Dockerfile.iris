@@ -8,7 +8,8 @@ RUN npm install \
   && export PATH="$PATH:./node_modules/.bin" \
   && webpack --mode production
 
-FROM containers.intersystems.com/intersystems/iris-community:2020.3.0.200.0
+# FROM containers.intersystems.com/intersystems/iris-community:2020.3.0.200.0
+FROM intersystemsdc/iris-community
 
 WORKDIR /opt/blocks
 
