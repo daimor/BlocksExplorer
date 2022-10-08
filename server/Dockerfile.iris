@@ -1,5 +1,6 @@
-ARG IRIS_VERSION=2020.1.0.202.0
-FROM store/intersystems/iris-community:${IRIS_VERSION}
+# ARG IRIS_VERSION=2020.1.0.202.0
+# FROM store/intersystems/iris-community:${IRIS_VERSION}
+FROM intersystemsdc/iris-community
 
 WORKDIR /opt/blocks
 
