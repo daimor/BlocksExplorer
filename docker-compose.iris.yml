@@ -5,13 +5,10 @@ services:
     build:
       context: server
       dockerfile: Dockerfile.iris
-      args:
-        IRIS_VERSION: ${IRIS_VERSION:-2020.1.0.209.0}
     command: --check-caps false
     ports:
       - 1972
       - 52773
-#      - 51773
     volumes:
 #      - ~/iris.key:/usr/irissys/mgr/iris.key
       - ./server/src:/opt/blocks/src
