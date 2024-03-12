@@ -1,6 +1,8 @@
 ![zpm](https://github.com/daimor/BlocksExplorer/workflows/zpm/badge.svg)
 
 # Blocks Explorer
+[![Quality Gate Status](https://community.objectscriptquality.com/api/project_badges/measure?project=intersystems_iris_community%2FCacheBlocksExplorer&metric=alert_status)](https://community.objectscriptquality.com/dashboard?id=intersystems_iris_community%2FCacheBlocksExplorer) 
+ 
 Database Blocks Explorer for InterSystems IRIS/Caché
 
 #### Key features

@@ -151,6 +151,7 @@ ClassMethod initColors() As %Status
     Set color = $Listbuild(red, green, blue)
     Set @mapGN@("Colors", i) = color
   }
+  Quit $$$OK
 }
 
 ClassMethod getColor(y, x, size, cellSize, cellSpace, showFill) As %List
